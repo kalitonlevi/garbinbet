@@ -15,9 +15,9 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "GARBINBET - Apostas Jiu-Jitsu",
+  title: "GARBINBET",
   description:
-    "Plataforma de apostas para campeonato interno de Jiu-Jitsu - Faixas Brancas",
+    "Plataforma de apostas para campeonatos internos da Garbin BJJ.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -27,6 +27,18 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",
+  },
+  openGraph: {
+    title: "GARBINBET",
+    description: "Plataforma de apostas para campeonatos internos da Garbin BJJ.",
+    siteName: "GARBINBET",
+    images: ["/og-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GARBINBET",
+    description: "Plataforma de apostas para campeonatos internos da Garbin BJJ.",
+    images: ["/og-image.png"],
   },
 };
 
