@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     title: "GARBINBET",
   },
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: "/favicon.png",
+    apple: "/favicon.png",
   },
   openGraph: {
     title: "GARBINBET",
