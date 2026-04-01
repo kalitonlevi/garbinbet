@@ -4,9 +4,11 @@ import Link from "next/link";
 export function Logo({
   size = 36,
   linkTo,
+  showText = true,
 }: {
   size?: number;
   linkTo?: string;
+  showText?: boolean;
 }) {
   const content = (
     <div className="flex items-center gap-2">
@@ -17,10 +19,12 @@ export function Logo({
         height={size}
         className="rounded"
       />
-      <span className="font-heading text-2xl tracking-wide">
-        <span className="text-[var(--brand-white)]">GARBIN</span>
-        <span className="text-[var(--brand-green)]">BET</span>
-      </span>
+      {showText && (
+        <span className="font-heading text-2xl tracking-wide">
+          <span className="text-[var(--brand-white)]">GARBIN</span>
+          <span className="text-[var(--brand-green)]">BET</span>
+        </span>
+      )}
     </div>
   );
 

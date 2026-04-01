@@ -59,11 +59,8 @@ export default function LoginPage() {
       style={{ background: "var(--bg-primary)" }}
     >
       <div className="w-full max-w-sm space-y-8">
-        <div className="flex flex-col items-center gap-4">
-          <Logo size={200} />
-          <p className="text-[var(--text-secondary)] text-sm">
-            Apostas Jiu-Jitsu Faixas Brancas
-          </p>
+        <div className="flex flex-col items-center">
+          <Logo size={200} showText={false} />
         </div>
 
         <Card
