@@ -9,23 +9,36 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    redirect("/login");
+  }
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  let profile = null;
+  let wallet = null;
+  try {
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    profile = profileData;
 
-  const { data: wallet } = await supabase
-    .from("wallets")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+    const { data: walletData } = await supabase
+      .from("wallets")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+    wallet = walletData;
+  } catch {
+    redirect("/login");
+  }
 
   if (!profile) redirect("/login");
 

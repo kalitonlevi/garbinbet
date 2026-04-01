@@ -11,6 +11,15 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  const { pathname } = request.nextUrl;
+
+  // Redirect root to /fights
+  if (pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/fights";
+    return NextResponse.redirect(url);
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -34,16 +43,26 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Auth failed (corrupted cookies, invalid token, network error).
+    // Clear auth cookies and let the request continue.
+    const authCookies = request.cookies.getAll().filter(c => c.name.startsWith("sb-"));
+    if (authCookies.length > 0) {
+      supabaseResponse = NextResponse.next({ request });
+      for (const cookie of authCookies) {
+        supabaseResponse.cookies.delete(cookie.name);
+      }
+    }
 
-  const { pathname } = request.nextUrl;
-
-  // Redirect root to /fights
-  if (pathname === "/") {
+    if (pathname === "/login") {
+      return supabaseResponse;
+    }
     const url = request.nextUrl.clone();
-    url.pathname = "/fights";
+    url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
@@ -66,13 +85,19 @@ export async function updateSession(request: NextRequest) {
 
   // Admin routes require admin role
   if (pathname.startsWith("/admin")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
 
-    if (profile?.role !== "admin") {
+      if (profile?.role !== "admin") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/fights";
+        return NextResponse.redirect(url);
+      }
+    } catch {
       const url = request.nextUrl.clone();
       url.pathname = "/fights";
       return NextResponse.redirect(url);
