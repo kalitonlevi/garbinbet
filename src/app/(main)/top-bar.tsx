@@ -37,9 +37,9 @@ export function MainTopBar({
           <Image
             src="/logo.png"
             alt="GARBINBET"
-            width={180}
-            height={50}
-            className="h-9 md:h-11 w-auto object-contain"
+            width={360}
+            height={100}
+            className="h-18 md:h-22 w-auto object-contain"
             priority
           />
         </Link>

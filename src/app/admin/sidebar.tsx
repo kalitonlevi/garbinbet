@@ -44,8 +44,8 @@ export function AdminSidebar() {
           <Image
             src="/logo.png"
             alt="GARBINBET"
-            width={120}
-            height={120}
+            width={240}
+            height={240}
             className="rounded-lg mx-auto"
           />
         </Link>
@@ -125,8 +125,8 @@ export function AdminSidebar() {
           <Image
             src="/logo.png"
             alt="GARBINBET"
-            width={28}
-            height={28}
+            width={56}
+            height={56}
             className="rounded"
           />
           <span className="text-xs font-bold text-[var(--brand-gold)] uppercase tracking-wider">

@@ -60,7 +60,7 @@ export default function LoginPage() {
     >
       <div className="w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center">
-          <Logo size={200} showText={false} />
+          <Logo size={400} showText={false} />
         </div>
 
         <Card
