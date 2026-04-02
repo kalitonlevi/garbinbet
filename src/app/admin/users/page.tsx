@@ -34,9 +34,9 @@ import {
 
 const transactionSchema = z.object({
   amount: z
-    .number({ error: "Informe um valor valido" })
+    .number({ error: "Informe um valor válido" })
     .positive("Valor deve ser positivo")
-    .max(100000, "Valor maximo R$ 100.000"),
+    .max(100000, "Valor máximo R$ 100.000"),
 });
 
 type UserRow = {
@@ -123,7 +123,7 @@ export default function AdminUsersPage() {
     const txAmount = parsed.data.amount;
 
     if (modalType === "withdraw" && selectedUser.balance < txAmount) {
-      toast.error("Saldo insuficiente do usuario");
+      toast.error("Saldo insuficiente do usuário");
       return;
     }
 
@@ -136,7 +136,7 @@ export default function AdminUsersPage() {
       .single();
 
     if (!wallet) {
-      toast.error("Carteira nao encontrada");
+      toast.error("Carteira não encontrada");
       setProcessing(false);
       return;
     }
@@ -163,7 +163,7 @@ export default function AdminUsersPage() {
       amount: modalType === "deposit" ? txAmount : -txAmount,
       balance_after: newBalance,
       description:
-        modalType === "deposit" ? "Deposito via admin" : "Saque via admin",
+        modalType === "deposit" ? "Depósito via admin" : "Saque via admin",
     });
 
     if (txError) {
@@ -184,7 +184,7 @@ export default function AdminUsersPage() {
     const newRole = currentRole === "admin" ? "user" : "admin";
     if (
       newRole === "user" &&
-      !confirm("Remover permissao de admin deste usuario?")
+      !confirm("Remover permissão de admin deste usuário?")
     )
       return;
     const { error } = await supabase
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
     if (error) toast.error(error.message);
     else {
       toast.success(
-        newRole === "admin" ? "Promovido a admin!" : "Rebaixado a usuario"
+        newRole === "admin" ? "Promovido a admin!" : "Rebaixado a usuário"
       );
       loadUsers();
     }
@@ -215,7 +215,7 @@ export default function AdminUsersPage() {
       <div className="flex items-center gap-2">
         <UserCog className="h-6 w-6 text-[var(--brand-gold)]" />
         <h1 className="font-heading text-3xl text-[var(--text-primary)]">
-          USUARIOS
+          USUÁRIOS
         </h1>
       </div>
 
@@ -259,7 +259,7 @@ export default function AdminUsersPage() {
                     Role
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs text-right">
-                    Acoes
+                    Ações
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -270,7 +270,7 @@ export default function AdminUsersPage() {
                       colSpan={6}
                       className="text-center text-[var(--text-muted)] py-8"
                     >
-                      Nenhum usuario encontrado.
+                      Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -360,7 +360,7 @@ export default function AdminUsersPage() {
               {modalType === "deposit" ? "DEPOSITAR" : "SACAR"}
             </DialogTitle>
             <DialogDescription className="text-sm text-[var(--text-secondary)] mb-4">
-              {selectedUser?.profile?.full_name ?? "Usuario"} — Saldo atual:{" "}
+              {selectedUser?.profile?.full_name ?? "Usuário"} — Saldo atual:{" "}
               <span className="text-[var(--brand-gold)] font-bold">
                 R$ {Number(selectedUser?.balance ?? 0).toFixed(2)}
               </span>

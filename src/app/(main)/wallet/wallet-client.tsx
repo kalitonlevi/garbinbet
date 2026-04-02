@@ -54,7 +54,7 @@ function txIcon(type: string) {
 function txLabel(type: string) {
   switch (type) {
     case "deposit":
-      return "Deposito";
+      return "Depósito";
     case "withdraw":
       return "Saque";
     case "bet_placed":
@@ -88,7 +88,7 @@ export function WalletClient({ balance, userPixKey, transactions }: Props) {
     e.preventDefault();
     const amount = parseFloat(withdrawAmount);
     if (!amount || amount < 1) {
-      toast.error("Valor minimo para saque e R$ 1,00");
+      toast.error("Valor mínimo para saque é R$ 1,00");
       return;
     }
     if (amount > balance) {
@@ -106,7 +106,7 @@ export function WalletClient({ balance, userPixKey, transactions }: Props) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      toast.error("Sessao expirada");
+      toast.error("Sessão expirada");
       setLoading(false);
       return;
     }
@@ -178,7 +178,7 @@ export function WalletClient({ balance, userPixKey, transactions }: Props) {
           >
             <Wallet className="h-10 w-10 mx-auto text-[#6B6B80] opacity-20 mb-2" />
             <p className="text-sm text-[#9999AA]">
-              Deposita ai pra comecar, brancao! 💰
+              Deposita aí pra começar, brancão! 💰
             </p>
           </div>
         ) : (

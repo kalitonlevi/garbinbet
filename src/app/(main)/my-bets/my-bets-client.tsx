@@ -15,9 +15,9 @@ function marketTypeLabel(type: string) {
     case "winner":
       return "Vencedor";
     case "method":
-      return "Metodo";
+      return "Método";
     case "has_submission":
-      return "Finalizacao";
+      return "Finalização";
     default:
       return type;
   }

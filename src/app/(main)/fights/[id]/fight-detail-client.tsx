@@ -38,9 +38,9 @@ function marketLabel(type: string) {
     case "winner":
       return "Vencedor";
     case "method":
-      return "Metodo de Vitoria";
+      return "Método de Vitória";
     case "has_submission":
-      return "Vai ter finalizacao?";
+      return "Vai ter finalização?";
     default:
       return type;
   }
@@ -212,11 +212,11 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
             <p className="text-xs text-[#D4A017] font-bold uppercase">
               Resultado:{" "}
               {fight.result_method === "submission"
-                ? "Finalizacao"
+                ? "Finalização"
                 : fight.result_method === "points"
                 ? "Pontos"
                 : fight.result_method === "dq"
-                ? "Desqualificacao"
+                ? "Desqualificação"
                 : fight.result_method === "draw"
                 ? "Empate"
                 : fight.result_method === "wo"
@@ -344,7 +344,7 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
             style={{ background: "#16161F" }}
           >
             <p className="text-sm text-[#6B6B80]">
-              Nenhum mercado de apostas disponivel.
+              Nenhum mercado de apostas disponível.
             </p>
           </div>
         )}

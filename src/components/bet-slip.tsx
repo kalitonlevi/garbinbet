@@ -105,7 +105,7 @@ export function BetSlip({
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("Nao autenticado");
+      if (!user) throw new Error("Não autenticado");
 
       const { error } = await supabase.rpc("place_bet", {
         p_user_id: user.id,
@@ -117,7 +117,7 @@ export function BetSlip({
 
       if (error) throw error;
 
-      toast.success("Aposta feita! Agora e torcer, faixa branca! 🔥");
+      toast.success("Aposta feita! Agora é torcer, faixa branca! 🔥");
       setAmount("");
       onOpenChange(false);
       router.refresh();
@@ -156,7 +156,7 @@ export function BetSlip({
             <div className="flex items-center gap-2 mt-1">
               <Check className="h-4 w-4 text-[#7ED957]" />
               <p className="text-sm text-[#F0F0F0]">
-                Voce apostou em:{" "}
+                Você apostou em:{" "}
                 <span className="font-bold text-[#7ED957]">{optionLabel}</span>
               </p>
             </div>
@@ -171,7 +171,7 @@ export function BetSlip({
               {liveOdds.toFixed(2)}
             </p>
             <p className="text-[10px] text-[#6B6B80]">
-              Odds podem mudar ate o fechamento
+              Odds podem mudar até o fechamento
             </p>
           </div>
 
@@ -250,7 +250,7 @@ export function BetSlip({
           {/* Amount range hint */}
           {numAmount > 0 && (numAmount < MIN_BET || numAmount > MAX_BET) && !insufficientBalance && (
             <p className="text-xs text-[#FF4757] text-center">
-              Aposta: minimo R$ {MIN_BET} / maximo R$ {MAX_BET}
+              Aposta: mínimo R$ {MIN_BET} / máximo R$ {MAX_BET}
             </p>
           )}
 

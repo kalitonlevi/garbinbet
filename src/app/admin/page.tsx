@@ -58,7 +58,7 @@ export default async function AdminDashboardPage() {
 
   const metrics = [
     {
-      label: "Total de Usuarios",
+      label: "Total de Usuários",
       value: usersRes.count ?? 0,
       icon: Users,
       color: "var(--brand-green)",
@@ -138,7 +138,7 @@ export default async function AdminDashboardPage() {
       {/* Recent Bets Table */}
       <div>
         <h2 className="font-heading text-xl text-[var(--text-primary)] mb-3">
-          ULTIMAS APOSTAS
+          ÚLTIMAS APOSTAS
         </h2>
         <Card
           className="border-[var(--border-default)] overflow-hidden"
@@ -155,7 +155,7 @@ export default async function AdminDashboardPage() {
                     Luta
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs">
-                    Selecao
+                    Seleção
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs text-right">
                     Valor

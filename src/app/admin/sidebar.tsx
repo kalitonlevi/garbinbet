@@ -23,7 +23,7 @@ const sidebarLinks = [
   { href: "/admin/fighters", label: "Lutadores", icon: Users },
   { href: "/admin/fights", label: "Lutas", icon: Swords },
   { href: "/admin/settle", label: "Apurar Resultados", icon: Target },
-  { href: "/admin/users", label: "Usuarios", icon: UserCog },
+  { href: "/admin/users", label: "Usuários", icon: UserCog },
   { href: "/admin/withdrawals", label: "Saques", icon: Banknote },
 ];
 

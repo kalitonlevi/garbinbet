@@ -164,14 +164,14 @@ export default function AdminFightsPage() {
           );
         } else if (market.type === "method") {
           optionsToCreate.push(
-            { market_id: market.id, label: "Finalizacao" },
-            { market_id: market.id, label: "Pontos/Decisao" },
+            { market_id: market.id, label: "Finalização" },
+            { market_id: market.id, label: "Pontos/Decisão" },
             { market_id: market.id, label: "DQ/Outro" }
           );
         } else if (market.type === "has_submission") {
           optionsToCreate.push(
             { market_id: market.id, label: "Sim" },
-            { market_id: market.id, label: "Nao" }
+            { market_id: market.id, label: "Não" }
           );
         }
       }

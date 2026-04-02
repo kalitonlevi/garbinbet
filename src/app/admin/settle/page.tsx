@@ -45,9 +45,9 @@ function marketTypeLabel(type: string) {
     case "winner":
       return "Vencedor";
     case "method":
-      return "Metodo de Vitoria";
+      return "Método de Vitória";
     case "has_submission":
-      return "Vai ter finalizacao?";
+      return "Vai ter finalização?";
     default:
       return type;
   }
@@ -191,7 +191,7 @@ export default function AdminSettlePage() {
         >
           <CardContent className="py-12 text-center text-[var(--text-muted)]">
             <Target className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            Nenhuma luta pendente de apuracao.
+            Nenhuma luta pendente de apuração.
           </CardContent>
         </Card>
       ) : (

@@ -73,7 +73,7 @@ export default function AdminWithdrawalsPage() {
     const { data, error } = await query;
 
     if (error) {
-      toast.error("Erro ao carregar solicitacoes");
+      toast.error("Erro ao carregar solicitações");
       console.error(error);
     }
 
@@ -212,7 +212,7 @@ export default function AdminWithdrawalsPage() {
           <p className="text-sm text-[var(--text-muted)]">
             {filter === "pending"
               ? "Nenhum saque pendente."
-              : "Nenhuma solicitacao de saque."}
+              : "Nenhuma solicitação de saque."}
           </p>
         </Card>
       ) : (
@@ -225,7 +225,7 @@ export default function AdminWithdrawalsPage() {
               <TableHeader>
                 <TableRow className="border-[var(--border-default)] hover:bg-transparent">
                   <TableHead className="text-[var(--text-muted)] text-xs">
-                    Usuario
+                    Usuário
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs text-right">
                     Valor
@@ -243,7 +243,7 @@ export default function AdminWithdrawalsPage() {
                     Data
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs text-right">
-                    Acoes
+                    Ações
                   </TableHead>
                 </TableRow>
               </TableHeader>
