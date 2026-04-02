@@ -20,8 +20,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // /login: NO Supabase calls at all — just show the page
-  if (pathname === "/login") {
+  // Public routes: NO Supabase calls — just pass through
+  if (pathname === "/login" || pathname.startsWith("/auth/")) {
     return supabaseResponse;
   }
 
