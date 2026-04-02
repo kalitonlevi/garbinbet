@@ -108,9 +108,11 @@ export function FightCardClient({
             className="flex items-center justify-between px-4 py-2"
             style={{ background: "#1C1C28" }}
           >
-            <Badge className="bg-[#D4A017] text-[#0A0A0F] text-[10px] font-bold px-2 py-0.5">
-              #{fight.fight_order ?? "?"}
-            </Badge>
+            {fight.fight_order != null && (
+              <Badge className="bg-[#D4A017] text-[#0A0A0F] text-[10px] font-bold px-2 py-0.5">
+                #{fight.fight_order}
+              </Badge>
+            )}
             <StatusBadge />
           </div>
 
