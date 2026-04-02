@@ -20,9 +20,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // /login: NO Supabase calls at all — just show the page
+  if (pathname === "/login") {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL.trim(),
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.trim(),
     {
       cookies: {
         getAll() {
@@ -64,16 +69,6 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
-  }
-
-  // Public routes that don't require auth
-  if (pathname === "/login") {
-    if (user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/fights";
-      return NextResponse.redirect(url);
-    }
-    return supabaseResponse;
   }
 
   // All other routes require auth
