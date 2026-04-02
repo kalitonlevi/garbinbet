@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Menu,
   X,
+  Banknote,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -23,6 +24,7 @@ const sidebarLinks = [
   { href: "/admin/fights", label: "Lutas", icon: Swords },
   { href: "/admin/settle", label: "Apurar Resultados", icon: Target },
   { href: "/admin/users", label: "Usuarios", icon: UserCog },
+  { href: "/admin/withdrawals", label: "Saques", icon: Banknote },
 ];
 
 export function AdminSidebar() {

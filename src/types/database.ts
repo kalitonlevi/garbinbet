@@ -90,3 +90,15 @@ export type Bet = {
   market_option?: MarketOption;
   market?: Market & { fight?: Fight };
 };
+
+export type WithdrawalRequest = {
+  id: string;
+  user_id: string;
+  amount: number;
+  pix_key: string;
+  status: "pending" | "approved" | "rejected";
+  admin_note: string | null;
+  created_at: string;
+  processed_at: string | null;
+  profile?: Profile;
+};

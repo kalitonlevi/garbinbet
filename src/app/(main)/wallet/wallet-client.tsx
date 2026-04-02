@@ -87,31 +87,52 @@ export function WalletClient({ balance, userPixKey, transactions }: Props) {
   async function handleWithdraw(e: React.FormEvent) {
     e.preventDefault();
     const amount = parseFloat(withdrawAmount);
-    if (!amount || amount <= 0) {
-      toast.error("Informe um valor valido");
+    if (!amount || amount < 1) {
+      toast.error("Valor minimo para saque e R$ 1,00");
       return;
     }
     if (amount > balance) {
       toast.error("Saldo insuficiente");
       return;
     }
+    if (!withdrawPix.trim()) {
+      toast.error("Informe sua chave PIX");
+      return;
+    }
 
     setLoading(true);
 
-    // Save PIX key to profile
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user && withdrawPix) {
+    if (!user) {
+      toast.error("Sessao expirada");
+      setLoading(false);
+      return;
+    }
+
+    // Save PIX key to profile
+    if (withdrawPix) {
       await supabase
         .from("profiles")
         .update({ pix_key: withdrawPix })
         .eq("id", user.id);
     }
 
-    toast.success("Saque solicitado! Admin vai processar em breve.");
-    setWithdrawOpen(false);
-    setWithdrawAmount("");
+    // Create withdrawal request
+    const { error } = await supabase.from("withdrawal_requests").insert({
+      user_id: user.id,
+      amount,
+      pix_key: withdrawPix.trim(),
+    });
+
+    if (error) {
+      toast.error("Erro ao solicitar saque: " + error.message);
+    } else {
+      toast.success("Saque solicitado! O admin vai processar em breve.");
+      setWithdrawOpen(false);
+      setWithdrawAmount("");
+    }
     setLoading(false);
     router.refresh();
   }
