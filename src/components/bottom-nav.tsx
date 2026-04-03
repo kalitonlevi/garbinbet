@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Swords, Ticket, Wallet, User } from "lucide-react";
+import { Swords, Ticket, Wallet, User, Users, GitBranch } from "lucide-react";
 
 const navItems = [
   { href: "/fights", label: "Lutas", icon: Swords },
+  { href: "/brackets", label: "Chaves", icon: GitBranch },
+  { href: "/fighters", label: "Lutadores", icon: Users },
   { href: "/my-bets", label: "Apostas", icon: Ticket },
   { href: "/wallet", label: "Carteira", icon: Wallet },
   { href: "/profile", label: "Perfil", icon: User },

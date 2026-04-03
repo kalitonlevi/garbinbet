@@ -26,7 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 // PIX key for deposits - easy to change
-const ADMIN_PIX_KEY = "garbinbet@pix.com";
+const ADMIN_PIX_KEY = "8248870c-f796-45e3-ac79-c828b2641eed";
 
 type Props = {
   balance: number;
@@ -232,7 +232,7 @@ export function WalletClient({ balance, userPixKey, transactions }: Props) {
             DEPOSITAR
           </DialogTitle>
           <DialogDescription className="text-sm text-[#9999AA]">
-            Envie o PIX para a chave abaixo e avise no grupo do WhatsApp:
+            Envie o PIX para a chave abaixo e avise o LEVI no whatsapp.
           </DialogDescription>
 
           <div className="space-y-4 mt-3">
