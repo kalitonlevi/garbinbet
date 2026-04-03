@@ -61,7 +61,8 @@ export type Fight = {
 export type Market = {
   id: string;
   fight_id: string;
-  type: "winner" | "method" | "has_submission";
+  type: "winner" | "method" | "has_submission" | "special";
+  label: string | null;
   status: "open" | "locked" | "settled" | "voided";
   created_at: string;
   market_options?: MarketOption[];

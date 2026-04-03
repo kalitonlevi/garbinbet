@@ -11,7 +11,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { ArrowLeft, User, Trophy, Swords, Flame, Check } from "lucide-react";
+import { ArrowLeft, User, Trophy, Swords, Flame, Check, Star } from "lucide-react";
 import { BetSlip } from "@/components/bet-slip";
 
 type Props = {
@@ -28,21 +28,25 @@ function marketIcon(type: string) {
       return <Swords className="h-4 w-4 text-[#D4A017]" />;
     case "has_submission":
       return <Flame className="h-4 w-4 text-[#D4A017]" />;
+    case "special":
+      return <Star className="h-4 w-4 text-purple-400" />;
     default:
       return null;
   }
 }
 
-function marketLabel(type: string) {
-  switch (type) {
+function marketLabel(market: any) {
+  switch (market.type) {
     case "winner":
       return "Vencedor";
     case "method":
       return "Método de Vitória";
     case "has_submission":
       return "Vai ter finalização?";
+    case "special":
+      return market.label || "Mercado Especial";
     default:
-      return type;
+      return market.type;
   }
 }
 
@@ -248,7 +252,7 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
                     <div className="flex items-center gap-2 flex-1">
                       {marketIcon(market.type)}
                       <span className="text-sm font-semibold text-[#F0F0F0]">
-                        {marketLabel(market.type)}
+                        {marketLabel(market)}
                       </span>
                     </div>
                     <span className="text-xs font-bold text-[#D4A017] mr-2">

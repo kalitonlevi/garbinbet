@@ -36,7 +36,7 @@ export default async function FightsPage() {
         `*,
         fighter_a:fighters!fighter_a_id(id, name, nickname, weight_kg, photo_url),
         fighter_b:fighters!fighter_b_id(id, name, nickname, weight_kg, photo_url),
-        markets(id, type, status, market_options(id, label, total_pool, is_winner))`
+        markets(id, type, status, label, market_options(id, label, total_pool, is_winner))`
       )
       .eq("event_id", event.id)
       .order("fight_order", { ascending: true });

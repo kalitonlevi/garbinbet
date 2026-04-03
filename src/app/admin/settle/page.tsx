@@ -69,7 +69,7 @@ export default function AdminSettlePage() {
         fighter_a:fighters!fighter_a_id(id, name, nickname, photo_url),
         fighter_b:fighters!fighter_b_id(id, name, nickname, photo_url),
         events(name),
-        markets(id, type, status, market_options(id, label, total_pool, is_winner))
+        markets(id, type, status, label, market_options(id, label, total_pool, is_winner))
       `
       )
       .in("status", ["locked", "finished"])

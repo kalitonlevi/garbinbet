@@ -16,8 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Swords, Plus, Loader2, Play, Lock } from "lucide-react";
-import type { Event, Fighter, Fight } from "@/types/database";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Swords, Plus, Loader2, Play, Lock, Star, Trash2 } from "lucide-react";
+import type { Event, Fighter, Fight, Market, MarketOption } from "@/types/database";
 
 const createFightSchema = z
   .object({
@@ -80,6 +87,19 @@ export default function AdminFightsPage() {
   const [fighterBId, setFighterBId] = useState("");
   const [fightOrder, setFightOrder] = useState("");
   const [filterEventId, setFilterEventId] = useState("");
+
+  // Special market dialog
+  const [specialDialogOpen, setSpecialDialogOpen] = useState(false);
+  const [specialFightId, setSpecialFightId] = useState("");
+  const [specialLabel, setSpecialLabel] = useState("");
+  const [specialOptions, setSpecialOptions] = useState<string[]>(["", ""]);
+  const [specialSaving, setSpecialSaving] = useState(false);
+  const [fightMarkets, setFightMarkets] = useState<(Market & { market_options?: MarketOption[] })[]>([]);
+  const [marketsDialogOpen, setMarketsDialogOpen] = useState(false);
+  const [marketsFightId, setMarketsFightId] = useState("");
+  const [marketsFightLabel, setMarketsFightLabel] = useState("");
+  const [loadingMarkets, setLoadingMarkets] = useState(false);
+  const [deletingMarket, setDeletingMarket] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -231,6 +251,102 @@ export default function AdminFightsPage() {
       loadData();
     }
     setActionLoading(null);
+  }
+
+  function openSpecialDialog(fightId: string) {
+    setSpecialFightId(fightId);
+    setSpecialLabel("");
+    setSpecialOptions(["", ""]);
+    setSpecialDialogOpen(true);
+  }
+
+  async function handleCreateSpecialMarket(e: React.FormEvent) {
+    e.preventDefault();
+    const label = specialLabel.trim();
+    const opts = specialOptions.map((o) => o.trim()).filter(Boolean);
+    if (!label) {
+      toast.error("Informe o nome do mercado");
+      return;
+    }
+    if (opts.length < 2) {
+      toast.error("Adicione pelo menos 2 opções");
+      return;
+    }
+
+    setSpecialSaving(true);
+
+    const { data: market, error } = await supabase
+      .from("markets")
+      .insert({
+        fight_id: specialFightId,
+        type: "special",
+        label,
+        status: "open",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error(error.message);
+      setSpecialSaving(false);
+      return;
+    }
+
+    const optionsToCreate = opts.map((opt) => ({
+      market_id: market.id,
+      label: opt,
+    }));
+
+    const { error: optErr } = await supabase
+      .from("market_options")
+      .insert(optionsToCreate);
+
+    if (optErr) {
+      toast.error(optErr.message);
+    } else {
+      toast.success("Mercado especial criado!");
+      setSpecialDialogOpen(false);
+    }
+    setSpecialSaving(false);
+  }
+
+  async function openMarketsDialog(fightId: string, fightLabel: string) {
+    setMarketsFightId(fightId);
+    setMarketsFightLabel(fightLabel);
+    setMarketsDialogOpen(true);
+    setLoadingMarkets(true);
+
+    const { data } = await supabase
+      .from("markets")
+      .select("*, market_options(*)")
+      .eq("fight_id", fightId)
+      .order("created_at", { ascending: true });
+
+    setFightMarkets(data ?? []);
+    setLoadingMarkets(false);
+  }
+
+  async function handleDeleteMarket(marketId: string) {
+    if (!confirm("Remover este mercado e todas as apostas associadas?")) return;
+    setDeletingMarket(marketId);
+    const { error } = await supabase.from("markets").delete().eq("id", marketId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Mercado removido");
+      setFightMarkets((prev) => prev.filter((m) => m.id !== marketId));
+    }
+    setDeletingMarket(null);
+  }
+
+  function marketTypeLabel(market: any) {
+    switch (market.type) {
+      case "winner": return "Vencedor";
+      case "method": return "Método de Vitória";
+      case "has_submission": return "Vai ter finalização?";
+      case "special": return market.label || "Mercado Especial";
+      default: return market.type;
+    }
   }
 
   const filteredFights = filterEventId
@@ -446,6 +562,31 @@ export default function AdminFightsPage() {
                           )}
                         </Button>
                       )}
+
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          openMarketsDialog(
+                            fight.id,
+                            `${fight.fighter_a?.name} vs ${fight.fighter_b?.name}`
+                          )
+                        }
+                        variant="outline"
+                        className="border-[var(--border-default)] text-[var(--text-secondary)] text-xs h-7"
+                      >
+                        Mercados
+                      </Button>
+
+                      {(fight.status === "upcoming" || fight.status === "open") && (
+                        <Button
+                          size="sm"
+                          onClick={() => openSpecialDialog(fight.id)}
+                          className="bg-purple-600 text-white hover:bg-purple-700 text-xs h-7"
+                        >
+                          <Star className="h-3 w-3 mr-1" />
+                          Especial
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -454,6 +595,191 @@ export default function AdminFightsPage() {
           })}
         </div>
       )}
+
+      {/* Special Market Dialog */}
+      <Dialog open={specialDialogOpen} onOpenChange={setSpecialDialogOpen}>
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-md border-[var(--border-default)] p-6"
+          style={{ background: "var(--bg-card)" }}
+        >
+          <DialogTitle className="font-heading text-2xl text-[var(--text-primary)] mb-2">
+            MERCADO ESPECIAL
+          </DialogTitle>
+          <DialogDescription className="text-sm text-[var(--text-muted)] mb-4">
+            Crie um mercado personalizado para esta luta
+          </DialogDescription>
+
+          <form onSubmit={handleCreateSpecialMarket} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-[var(--text-secondary)]">
+                Pergunta do mercado *
+              </Label>
+              <Input
+                value={specialLabel}
+                onChange={(e) => setSpecialLabel(e.target.value)}
+                placeholder='Ex: "Quem vai derrubar primeiro?"'
+                required
+                className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[var(--text-secondary)]">Opções *</Label>
+              {specialOptions.map((opt, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    value={opt}
+                    onChange={(e) => {
+                      const updated = [...specialOptions];
+                      updated[i] = e.target.value;
+                      setSpecialOptions(updated);
+                    }}
+                    placeholder={`Opção ${i + 1}`}
+                    className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
+                  />
+                  {specialOptions.length > 2 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setSpecialOptions(specialOptions.filter((_, j) => j !== i))
+                      }
+                      className="border-[var(--color-danger)] text-[var(--color-danger)] h-9 w-9 p-0"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {specialOptions.length < 6 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSpecialOptions([...specialOptions, ""])}
+                  className="border-[var(--border-default)] text-[var(--text-secondary)] text-xs"
+                >
+                  <Plus className="h-3 w-3 mr-1" /> Adicionar opção
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <DialogClose className="flex-1 h-10 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--bg-elevated)] transition-colors">
+                Cancelar
+              </DialogClose>
+              <Button
+                type="submit"
+                disabled={specialSaving}
+                className="flex-1 bg-purple-600 text-white hover:bg-purple-700 font-bold"
+              >
+                {specialSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Criar Mercado"
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Markets Dialog */}
+      <Dialog open={marketsDialogOpen} onOpenChange={setMarketsDialogOpen}>
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-md border-[var(--border-default)] p-6 max-h-[80vh] overflow-y-auto"
+          style={{ background: "var(--bg-card)" }}
+        >
+          <DialogTitle className="font-heading text-2xl text-[var(--text-primary)] mb-1">
+            MERCADOS
+          </DialogTitle>
+          <DialogDescription className="text-sm text-[var(--text-muted)] mb-4">
+            {marketsFightLabel}
+          </DialogDescription>
+
+          {loadingMarkets ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--brand-green)]" />
+            </div>
+          ) : fightMarkets.length === 0 ? (
+            <p className="text-sm text-[var(--text-muted)] text-center py-4">
+              Nenhum mercado encontrado.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {fightMarkets.map((market) => (
+                <div
+                  key={market.id}
+                  className="rounded-lg border border-[var(--border-default)] p-3"
+                  style={{ background: "var(--bg-elevated)" }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {market.type === "special" && (
+                        <Star className="h-3.5 w-3.5 text-purple-400" />
+                      )}
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">
+                        {marketTypeLabel(market)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={`text-[9px] ${
+                          market.status === "open"
+                            ? "border-[var(--brand-green)] text-[var(--brand-green)]"
+                            : market.status === "locked"
+                            ? "border-[var(--color-warning)] text-[var(--color-warning)]"
+                            : "border-[var(--text-muted)] text-[var(--text-muted)]"
+                        }`}
+                      >
+                        {market.status}
+                      </Badge>
+                      {market.type === "special" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={deletingMarket === market.id}
+                          onClick={() => handleDeleteMarket(market.id)}
+                          className="border-[var(--color-danger)] text-[var(--color-danger)] h-6 w-6 p-0"
+                        >
+                          {deletingMarket === market.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    {market.market_options?.map((opt) => (
+                      <div
+                        key={opt.id}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="text-[var(--text-secondary)]">
+                          {opt.label}
+                        </span>
+                        <span className="text-[var(--brand-gold)] font-bold">
+                          R$ {Number(opt.total_pool).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogClose className="mt-4 w-full h-10 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--bg-elevated)] transition-colors">
+            Fechar
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
