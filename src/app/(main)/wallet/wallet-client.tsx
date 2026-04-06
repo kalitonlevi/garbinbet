@@ -178,7 +178,7 @@ export function WalletClient({ balance, userPixKey, transactions }: Props) {
           >
             <Wallet className="h-10 w-10 mx-auto text-[#6B6B80] opacity-20 mb-2" />
             <p className="text-sm text-[#9999AA]">
-              Deposita aí pra começar, brancão! 💰
+              Para começar a apostar, faça um depósito! 💰
             </p>
           </div>
         ) : (
