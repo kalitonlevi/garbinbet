@@ -433,7 +433,28 @@ export default async function BracketsPage() {
       ) : (
         <>
           <Bracket fights={maleFights} title="MASCULINO" byeName="Bernardo Wieser Soares" />
-          <Bracket fights={femaleFights} title="FEMININO" />
+
+          <div
+            className="rounded-xl border p-4"
+            style={{ background: SURFACE, borderColor: BORDER }}
+          >
+            <h2
+              className="font-heading text-lg tracking-wide text-center mb-3"
+              style={{ color: GOLD }}
+            >
+              FEMININO
+            </h2>
+            <div className="flex flex-col items-center gap-2">
+              <Trophy className="h-8 w-8" style={{ color: GOLD }} />
+              <p
+                className="text-[10px] font-bold tracking-widest"
+                style={{ color: GOLD }}
+              >
+                LUTA ÚNICA
+              </p>
+              <MatchCard fight={femaleFights[0] ?? null} align="left" />
+            </div>
+          </div>
         </>
       )}
     </div>
