@@ -113,18 +113,45 @@ function MatchCard({
   );
 }
 
-function ByeCard() {
+function ByeCard({ name, align }: { name?: string; align: "left" | "right" }) {
   return (
     <div
-      className="w-[150px] rounded-md border flex items-center justify-center py-3 opacity-60"
+      className="w-[150px] rounded-md overflow-hidden border"
       style={{ background: POPOVER, borderColor: BORDER }}
     >
-      <span
-        className="text-[10px] font-bold italic"
-        style={{ color: MUTED }}
+      <div
+        className={`flex items-center gap-2 px-2 py-1.5 ${
+          align === "right" ? "flex-row-reverse" : ""
+        }`}
       >
-        BYE
-      </span>
+        <div
+          className="h-5 w-5 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center border"
+          style={{ background: SURFACE, borderColor: GOLD }}
+        >
+          <User className="h-3 w-3" style={{ color: MUTED }} />
+        </div>
+        <span
+          className={`text-[10px] font-bold truncate flex-1 ${
+            align === "right" ? "text-right" : "text-left"
+          }`}
+          style={{ color: TEXT }}
+        >
+          {name ?? "BYE"}
+        </span>
+      </div>
+      <div className="h-px" style={{ background: BORDER }} />
+      <div
+        className={`flex items-center px-2 py-1.5 ${
+          align === "right" ? "justify-start" : "justify-end"
+        }`}
+      >
+        <span
+          className="text-[9px] font-bold tracking-widest"
+          style={{ color: GOLD }}
+        >
+          BYE — AVANÇA
+        </span>
+      </div>
     </div>
   );
 }
@@ -134,7 +161,7 @@ function Column({
   side,
   label,
 }: {
-  items: (FightRow | null | "bye")[];
+  items: (FightRow | null | { bye: true; name?: string })[];
   side: "left" | "right";
   label: string;
 }) {
@@ -160,7 +187,11 @@ function Column({
               className={`flex-1 flex items-center min-h-[68px] ${sideCls} ${vCls}`}
               style={{ borderColor: GOLD }}
             >
-              {it === "bye" ? <ByeCard /> : <MatchCard fight={it} align={side} />}
+              {it && typeof it === "object" && "bye" in it ? (
+                <ByeCard name={it.name} align={side} />
+              ) : (
+                <MatchCard fight={it as FightRow | null} align={side} />
+              )}
             </div>
           );
         })}
@@ -172,9 +203,11 @@ function Column({
 function Bracket({
   fights,
   title,
+  byeName,
 }: {
   fights: FightRow[];
   title: string;
+  byeName?: string;
 }) {
   // Map fight_order → fight, but order is global per event. Re-sequence
   // gender-local: sort by fight_order, then assign positions 1..14.
@@ -186,8 +219,8 @@ function Bracket({
   const get = (n: number) => local.get(n) ?? null;
 
   // 15-person / 16-slot bracket: R1=7+BYE, QF=4, SF=2, F=1
-  const leftR1: (FightRow | null | "bye")[] = [get(1), get(2), get(3), get(4)];
-  const rightR1: (FightRow | null | "bye")[] = [get(5), get(6), get(7), "bye"];
+  const leftR1: (FightRow | null | { bye: true; name?: string })[] = [get(1), get(2), get(3), get(4)];
+  const rightR1: (FightRow | null | { bye: true; name?: string })[] = [get(5), get(6), get(7), { bye: true, name: byeName }];
   const leftQF: (FightRow | null)[] = [get(8), get(9)];
   const rightQF: (FightRow | null)[] = [get(10), get(11)];
   const leftSF: (FightRow | null)[] = [get(12)];
@@ -297,7 +330,7 @@ export default async function BracketsPage() {
         </div>
       ) : (
         <>
-          <Bracket fights={maleFights} title="MASCULINO" />
+          <Bracket fights={maleFights} title="MASCULINO" byeName="Bernardo Wieser Soares" />
           <Bracket fights={femaleFights} title="FEMININO" />
         </>
       )}
