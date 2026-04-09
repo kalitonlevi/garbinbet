@@ -156,6 +156,9 @@ function ByeCard({ name, align }: { name?: string; align: "left" | "right" }) {
   );
 }
 
+const COL_HEIGHT = 560;
+const LINE = 2;
+
 function Column({
   items,
   side,
@@ -175,26 +178,115 @@ function Column({
       >
         {label}
       </div>
-      <div className="flex-1 flex flex-col justify-around">
-        {items.map((it, i) => {
-          const isTop = i % 2 === 0;
-          const sideCls =
-            side === "left" ? "pr-3 border-r-2" : "pl-3 border-l-2";
-          const vCls = isTop ? "border-b-2" : "border-t-2";
-          return (
+      <div className="flex flex-col" style={{ height: COL_HEIGHT }}>
+        {items.map((it, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-center"
+            style={{ flex: 1 }}
+          >
+            {it && typeof it === "object" && "bye" in it ? (
+              <ByeCard name={it.name} align={side} />
+            ) : (
+              <MatchCard fight={it as FightRow | null} align={side} />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Connector between two adjacent rounds, flow-chart style.
+ * `pairs` is the count of "Y" mergers (each merges 2 left cells → 1 right cell).
+ * If pairs === 0, renders a single straight horizontal line (used SF→Final).
+ */
+function Connector({
+  pairs,
+  side,
+  width = 32,
+}: {
+  pairs: number;
+  side: "left" | "right";
+  width?: number;
+}) {
+  const lineStyle = { background: GOLD } as const;
+  return (
+    <div className="flex flex-col" style={{ width }}>
+      {/* spacer to align with column label */}
+      <div className="mb-1" style={{ height: 14 }} />
+      <div className="flex flex-col" style={{ height: COL_HEIGHT }}>
+        {pairs === 0 ? (
+          <div className="relative" style={{ flex: 1 }}>
             <div
-              key={i}
-              className={`flex-1 flex items-center min-h-[68px] ${sideCls} ${vCls}`}
-              style={{ borderColor: GOLD }}
-            >
-              {it && typeof it === "object" && "bye" in it ? (
-                <ByeCard name={it.name} align={side} />
-              ) : (
-                <MatchCard fight={it as FightRow | null} align={side} />
-              )}
+              className="absolute"
+              style={{
+                top: "50%",
+                left: 0,
+                right: 0,
+                height: LINE,
+                marginTop: -LINE / 2,
+                ...lineStyle,
+              }}
+            />
+          </div>
+        ) : (
+          Array.from({ length: pairs }).map((_, i) => (
+            <div key={i} className="relative" style={{ flex: 1 }}>
+              {/* top stub — from top-cell center toward midline */}
+              <div
+                className="absolute"
+                style={{
+                  top: "25%",
+                  left: side === "left" ? 0 : "50%",
+                  right: side === "left" ? "50%" : 0,
+                  height: LINE,
+                  marginTop: -LINE / 2,
+                  ...lineStyle,
+                }}
+              />
+              {/* bottom stub */}
+              <div
+                className="absolute"
+                style={{
+                  top: "75%",
+                  left: side === "left" ? 0 : "50%",
+                  right: side === "left" ? "50%" : 0,
+                  height: LINE,
+                  marginTop: -LINE / 2,
+                  ...lineStyle,
+                }}
+              />
+              {/* vertical bar joining stubs */}
+              <div
+                className="absolute"
+                style={{
+                  top: "25%",
+                  height: "50%",
+                  left: side === "left" ? "50%" : undefined,
+                  right: side === "right" ? "50%" : undefined,
+                  width: LINE,
+                  marginLeft: side === "left" ? -LINE / 2 : undefined,
+                  marginRight: side === "right" ? -LINE / 2 : undefined,
+                  ...lineStyle,
+                }}
+              />
+              {/* output stub — from midline toward next round */}
+              <div
+                className="absolute"
+                style={{
+                  top: "50%",
+                  left: side === "left" ? "50%" : 0,
+                  right: side === "left" ? 0 : "50%",
+                  height: LINE,
+                  marginTop: -LINE / 2,
+                  ...lineStyle,
+                }}
+              />
             </div>
-          );
-        })}
+          ))
+        )}
       </div>
     </div>
   );
@@ -239,33 +331,43 @@ function Bracket({
         {title}
       </h2>
       <div className="overflow-x-auto">
-        <div
-          className="flex items-stretch w-max mx-auto"
-          style={{ minHeight: 560 }}
-        >
+        <div className="flex items-start w-max mx-auto">
           <Column items={leftR1} side="left" label="OITAVAS" />
+          <Connector pairs={2} side="left" />
           <Column items={leftQF} side="left" label="QUARTAS" />
+          <Connector pairs={1} side="left" />
           <Column items={leftSF} side="left" label="SEMI" />
+          <Connector pairs={0} side="left" width={20} />
 
-          <div className="flex flex-col items-center justify-center px-5 gap-3">
-            <Trophy className="h-12 w-12" style={{ color: GOLD }} />
-            <p
-              className="text-[10px] font-bold tracking-widest"
-              style={{ color: GOLD }}
+          {/* Center: trophy + final */}
+          <div className="flex flex-col items-center" style={{ width: 170 }}>
+            <div className="mb-1" style={{ height: 14 }} />
+            <div
+              className="flex flex-col items-center justify-center gap-2"
+              style={{ height: COL_HEIGHT }}
             >
-              VENCEDOR
-            </p>
-            <MatchCard fight={finalMatch} align="left" />
-            <p
-              className="text-[9px] font-bold tracking-widest"
-              style={{ color: GOLD }}
-            >
-              FINAL
-            </p>
+              <Trophy className="h-10 w-10" style={{ color: GOLD }} />
+              <p
+                className="text-[10px] font-bold tracking-widest"
+                style={{ color: GOLD }}
+              >
+                VENCEDOR
+              </p>
+              <MatchCard fight={finalMatch} align="left" />
+              <p
+                className="text-[9px] font-bold tracking-widest"
+                style={{ color: GOLD }}
+              >
+                FINAL
+              </p>
+            </div>
           </div>
 
+          <Connector pairs={0} side="right" width={20} />
           <Column items={rightSF} side="right" label="SEMI" />
+          <Connector pairs={1} side="right" />
           <Column items={rightQF} side="right" label="QUARTAS" />
+          <Connector pairs={2} side="right" />
           <Column items={rightR1} side="right" label="OITAVAS" />
         </div>
       </div>
