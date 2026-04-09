@@ -24,6 +24,7 @@ const fighterSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   nickname: z.string().optional(),
   weight_kg: z.number().positive("Peso deve ser positivo").optional(),
+  gender: z.enum(["M", "F"]),
 });
 
 export default function AdminFightersPage() {
@@ -36,6 +37,7 @@ export default function AdminFightersPage() {
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [weight, setWeight] = useState("");
+  const [gender, setGender] = useState<"M" | "F">("M");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +62,7 @@ export default function AdminFightersPage() {
     setName("");
     setNickname("");
     setWeight("");
+    setGender("M");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -70,6 +73,7 @@ export default function AdminFightersPage() {
     setName(f.name);
     setNickname(f.nickname ?? "");
     setWeight(f.weight_kg ? String(f.weight_kg) : "");
+    setGender(f.gender);
     setPhotoFile(null);
     setPhotoPreview(f.photo_url);
     setDialogOpen(true);
@@ -113,6 +117,7 @@ export default function AdminFightersPage() {
       name,
       nickname: nickname || undefined,
       weight_kg: weight ? parseFloat(weight) : undefined,
+      gender,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
@@ -130,6 +135,7 @@ export default function AdminFightersPage() {
           name: parsed.data.name,
           nickname: parsed.data.nickname || null,
           weight_kg: parsed.data.weight_kg ?? null,
+          gender: parsed.data.gender,
           photo_url: photoUrl,
         })
         .eq("id", editingFighter.id);
@@ -147,6 +153,7 @@ export default function AdminFightersPage() {
           name: parsed.data.name,
           nickname: parsed.data.nickname || null,
           weight_kg: parsed.data.weight_kg ?? null,
+          gender: parsed.data.gender,
         })
         .select()
         .single();
@@ -365,12 +372,23 @@ export default function AdminFightersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[var(--text-secondary)]">Faixa</Label>
-                  <Input
-                    value="Branca"
-                    disabled
-                    className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-muted)]"
-                  />
+                  <Label className="text-[var(--text-secondary)]">Gênero</Label>
+                  <div className="flex gap-2">
+                    {(["M", "F"] as const).map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setGender(g)}
+                        className={`flex-1 h-10 rounded-lg border text-sm font-bold transition-colors ${
+                          gender === g
+                            ? "bg-[var(--brand-green)] text-[var(--bg-primary)] border-[var(--brand-green)]"
+                            : "bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        {g === "M" ? "Masc" : "Fem"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

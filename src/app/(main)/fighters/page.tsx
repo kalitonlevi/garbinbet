@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, User } from "lucide-react";
 import Image from "next/image";
+import type { Fighter } from "@/types/database";
 
 export default async function FightersPage() {
   const supabase = await createClient();
@@ -11,8 +12,11 @@ export default async function FightersPage() {
     .select("*")
     .order("name");
 
+  const male = (fighters ?? []).filter((f: Fighter) => f.gender === "M");
+  const female = (fighters ?? []).filter((f: Fighter) => f.gender === "F");
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Users className="h-5 w-5 text-[#D4A017]" />
         <h1 className="font-heading text-2xl text-[#D4A017] tracking-wide">
@@ -24,6 +28,34 @@ export default async function FightersPage() {
         <Card className="border-[#2A2A3A]" style={{ background: "#16161F" }}>
           <CardContent className="py-8 text-center text-[#6B6B80]">
             Nenhum lutador cadastrado ainda.
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <FighterSection title="MASCULINO" fighters={male} />
+          <FighterSection title="FEMININO" fighters={female} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function FighterSection({
+  title,
+  fighters,
+}: {
+  title: string;
+  fighters: Fighter[];
+}) {
+  return (
+    <section className="space-y-3">
+      <h2 className="font-heading text-sm tracking-widest text-[#9999AA]">
+        {title}
+      </h2>
+      {fighters.length === 0 ? (
+        <Card className="border-[#2A2A3A]" style={{ background: "#16161F" }}>
+          <CardContent className="py-6 text-center text-[#6B6B80] text-sm">
+            Nenhum lutador nesta categoria.
           </CardContent>
         </Card>
       ) : (
@@ -68,6 +100,6 @@ export default async function FightersPage() {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

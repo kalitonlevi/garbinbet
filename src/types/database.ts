@@ -32,6 +32,7 @@ export type Fighter = {
   belt: string;
   weight_kg: number | null;
   photo_url: string | null;
+  gender: "M" | "F";
   created_at: string;
 };
 
