@@ -216,6 +216,11 @@ export function FightCardClient({
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {winnerOptions
                   .filter((o: any) => o.label !== "Empate")
+                  .sort((a: any, b: any) => {
+                    const aIsA = a.label === fight.fighter_a?.name;
+                    const bIsA = b.label === fight.fighter_a?.name;
+                    return aIsA ? -1 : bIsA ? 1 : 0;
+                  })
                   .map((option: any) => {
                     const odds = getOdds(option);
                     const isUserBet = userBetOnWinner === option.id;
