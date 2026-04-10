@@ -93,6 +93,38 @@ export type Bet = {
   market?: Market & { fight?: Fight };
 };
 
+export type FightScore = {
+  id: string;
+  fight_id: string;
+  fighter_id: string;
+  points: number;
+  advantages: number;
+  penalties: number;
+  updated_at: string;
+};
+
+export type FightScoreAction =
+  | "takedown"
+  | "sweep"
+  | "knee_on_belly"
+  | "guard_pass"
+  | "mount"
+  | "back_control"
+  | "advantage"
+  | "penalty";
+
+export type FightScoreEvent = {
+  id: string;
+  fight_id: string;
+  fighter_id: string;
+  action: FightScoreAction;
+  points_delta: number;
+  advantages_delta: number;
+  penalties_delta: number;
+  created_by: string | null;
+  created_at: string;
+};
+
 export type WithdrawalRequest = {
   id: string;
   user_id: string;
