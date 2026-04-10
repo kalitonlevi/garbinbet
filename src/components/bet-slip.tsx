@@ -224,9 +224,14 @@ export function BetSlip({
               <p className="text-[10px] text-[#6B6B80] uppercase tracking-wider">
                 Retorno potencial
               </p>
-              <p className="text-xl font-bold text-[#D4A017]">
+              <p className={`text-xl font-bold ${potentialReturn < numAmount ? "text-[#FF4757]" : "text-[#D4A017]"}`}>
                 R$ {potentialReturn.toFixed(2)}
               </p>
+              {potentialReturn < numAmount && (
+                <p className="text-[11px] text-[#FF4757] mt-1 font-medium">
+                  Retorno abaixo do valor apostado! Muitas apostas neste lado.
+                </p>
+              )}
             </div>
           )}
 
