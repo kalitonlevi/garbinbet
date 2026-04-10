@@ -16,11 +16,12 @@ import {
   Clock,
   CheckCircle,
 } from "lucide-react";
+import { WalletCardWithTooltip } from "./wallet-card-tooltip";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  const [usersRes, walletsRes, pendingRes, settledRes, recentBetsRes] =
+  const [usersRes, walletsRes, pendingRes, settledRes, recentBetsRes, transactionsRes, marketOptionsRes, allBetsRes] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -51,10 +52,34 @@ export default async function AdminDashboardPage() {
         )
         .order("created_at", { ascending: false })
         .limit(5),
+      supabase.from("transactions").select("type,amount"),
+      supabase.from("market_options").select("total_pool"),
+      supabase.from("bets").select("amount,status,settled_amount"),
     ]);
 
   const totalWallets =
     walletsRes.data?.reduce((sum, w) => sum + Number(w.balance), 0) ?? 0;
+
+  const txs = transactionsRes.data ?? [];
+  const totalDeposits = txs.filter(t => t.type === "deposit").reduce((s, t) => s + Number(t.amount), 0);
+  const totalWithdrawals = Math.abs(txs.filter(t => t.type === "withdraw").reduce((s, t) => s + Number(t.amount), 0));
+  const totalInPools = (marketOptionsRes.data ?? []).reduce((s, o) => s + Number(o.total_pool), 0);
+  const allBets = allBetsRes.data ?? [];
+  const totalBetVolume = allBets.reduce((s, b) => s + Number(b.amount), 0);
+  const totalPaidOut = allBets.filter(b => b.status === "won").reduce((s, b) => s + Number(b.settled_amount), 0);
+  const houseCommissionRealized = totalBetVolume - totalPaidOut - totalInPools - allBets.filter(b => b.status === "refunded").reduce((s, b) => s + Number(b.amount), 0);
+  const houseCommissionPotential = totalInPools * 0.10;
+
+  const financialDetails = {
+    totalDeposits,
+    totalWithdrawals,
+    totalWallets,
+    totalInPools,
+    totalBetVolume,
+    totalPaidOut,
+    houseCommissionRealized,
+    houseCommissionPotential,
+  };
 
   const metrics = [
     {
@@ -99,6 +124,16 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((m) => {
           const Icon = m.icon;
+          if (m.label === "Total em Wallets") {
+            return (
+              <WalletCardWithTooltip
+                key={m.label}
+                value={String(m.value)}
+                color={m.color}
+                financialDetails={financialDetails}
+              />
+            );
+          }
           return (
             <Card
               key={m.label}
