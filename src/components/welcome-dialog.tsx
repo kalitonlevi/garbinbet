@@ -37,9 +37,16 @@ export function WelcomeDialog() {
           <DialogTitle className="text-2xl text-[#D4A017]">
             Bem-vindo ao GarbinBet!
           </DialogTitle>
-          <DialogDescription className="text-[#9999AA] text-sm leading-relaxed">
-            No momento ainda não temos lutas agendadas, mas fique tranquilo!
-            Em breve as lutas serão marcadas e estarão disponíveis para você apostar.
+          <DialogDescription className="text-[#9999AA] text-sm leading-relaxed space-y-3">
+            <span className="block">
+              Hoje é oficialmente o <strong className="text-[#F0F0F0]">Dia da Rinha!</strong>
+            </span>
+            <span className="block">
+              Divirta-se com responsabilidade. Lembre-se: existe uma taxa de <strong className="text-[#D4A017]">10%</strong> sobre as apostas para cobertura dos custos operacionais da plataforma.
+            </span>
+            <span className="block text-[#7ED957] font-bold">
+              Boa sorte a todos!
+            </span>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="border-0 bg-transparent sm:justify-center">
@@ -47,7 +54,7 @@ export function WelcomeDialog() {
             onClick={handleClose}
             className="w-full bg-[#D4A017] hover:bg-[#D4A017]/90 text-black font-bold"
           >
-            Entendi!
+            OK
           </Button>
         </DialogFooter>
       </DialogContent>
