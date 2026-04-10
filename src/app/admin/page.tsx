@@ -53,8 +53,8 @@ export default async function AdminDashboardPage() {
         .order("created_at", { ascending: false })
         .limit(5),
       supabase.from("transactions").select("type,amount"),
-      supabase.from("market_options").select("total_pool"),
-      supabase.from("bets").select("amount,status,settled_amount"),
+      supabase.from("market_options").select("total_pool,market_id"),
+      supabase.from("bets").select("amount,status,settled_amount,market_id"),
     ]);
 
   const totalWallets =
@@ -63,11 +63,21 @@ export default async function AdminDashboardPage() {
   const txs = transactionsRes.data ?? [];
   const totalDeposits = txs.filter(t => t.type === "deposit").reduce((s, t) => s + Number(t.amount), 0);
   const totalWithdrawals = Math.abs(txs.filter(t => t.type === "withdraw").reduce((s, t) => s + Number(t.amount), 0));
-  const totalInPools = (marketOptionsRes.data ?? []).reduce((s, o) => s + Number(o.total_pool), 0);
+  const allOptions = marketOptionsRes.data ?? [];
+  const totalInPools = allOptions.reduce((s, o) => s + Number(o.total_pool), 0);
   const allBets = allBetsRes.data ?? [];
   const totalBetVolume = allBets.reduce((s, b) => s + Number(b.amount), 0);
   const totalPaidOut = allBets.filter(b => b.status === "won").reduce((s, b) => s + Number(b.settled_amount), 0);
-  const houseCommissionRealized = totalBetVolume - totalPaidOut - totalInPools - allBets.filter(b => b.status === "refunded").reduce((s, b) => s + Number(b.amount), 0);
+
+  // Taxa realizada = dinheiro apostado em mercados settled - dinheiro pago aos vencedores
+  // (a diferença é a comissão de 10% que a casa reteve)
+  const settledMarketIds = new Set(
+    allBets.filter(b => b.status === "won" || b.status === "lost").map(b => b.market_id)
+  );
+  const settledPoolTotal = allOptions
+    .filter(o => settledMarketIds.has(o.market_id))
+    .reduce((s, o) => s + Number(o.total_pool), 0);
+  const houseCommissionRealized = settledPoolTotal - totalPaidOut;
   const houseCommissionPotential = totalInPools * 0.10;
 
   const financialDetails = {
