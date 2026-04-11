@@ -200,7 +200,11 @@ export function ReportClient({ balance, bets }: Props) {
           icon={<Trophy className="h-4 w-4 text-[#7ED957]" />}
           label="Apostas ganhas"
           value={`${wonBets.length}`}
-          sub={`+${brl(profitOnWins)} de lucro`}
+          sub={
+            profitOnWins >= 0
+              ? `+${brl(profitOnWins)} de lucro`
+              : `−${brl(Math.abs(profitOnWins))} de prejuízo`
+          }
           color="text-[#7ED957]"
         />
         <SummaryTile
@@ -240,12 +244,16 @@ export function ReportClient({ balance, bets }: Props) {
           muted
         />
         <Row
-          label="Total recebido em prêmios"
-          value={`+${brl(totalWon)}`}
-          valueColor="text-[#7ED957]"
+          label={
+            profitOnWins >= 0
+              ? "Lucro das apostas ganhas"
+              : "Prejuízo das apostas ganhas"
+          }
+          value={`${profitOnWins >= 0 ? "+" : "−"}${brl(Math.abs(profitOnWins))}`}
+          valueColor={profitOnWins >= 0 ? "text-[#7ED957]" : "text-[#FF4757]"}
         />
         <Row
-          label="Total perdido em apostas"
+          label="Prejuízo das apostas perdidas"
           value={`−${brl(totalLostStake)}`}
           valueColor="text-[#FF4757]"
         />
@@ -257,9 +265,11 @@ export function ReportClient({ balance, bets }: Props) {
           bold
         />
         <p className="text-[10px] text-[#6B6B80] pt-2 leading-relaxed">
-          Cálculo: soma dos lucros nas apostas que você ganhou, menos o valor
-          das apostas que você perdeu. Apostas em andamento e reembolsadas não
-          entram nessa conta.
+          Cálculo: lucro (ou prejuízo) das apostas que você ganhou, menos o
+          valor perdido nas apostas que errou. Apostas em andamento e
+          reembolsadas não entram nessa conta. Quando o prêmio de uma aposta
+          ganha é menor que o valor apostado (por causa da distribuição do
+          bolão + comissão da casa), o prejuízo aparece mesmo entre as ganhas.
         </p>
       </div>
 
@@ -376,20 +386,43 @@ function BetReportCard({ bet }: { bet: Bet }) {
   switch (bet.status) {
     case "won": {
       const profit = settledAmount - amount;
-      borderClass = "border-[#7ED957]";
-      statusIcon = <Trophy className="h-3.5 w-3.5" />;
-      statusText = "GANHOU";
-      statusColor = "text-[#7ED957]";
-      explanation = (
-        <>
-          Você apostou <strong>{brl(amount)}</strong> e acertou! Recebeu{" "}
-          <strong className="text-[#7ED957]">{brl(settledAmount)}</strong> de
-          volta na carteira.
-        </>
-      );
-      resultLine = (
-        <span className="text-[#7ED957] font-bold">+{brl(profit)}</span>
-      );
+      if (profit >= 0) {
+        borderClass = "border-[#7ED957]";
+        statusIcon = <Trophy className="h-3.5 w-3.5" />;
+        statusText = "GANHOU";
+        statusColor = "text-[#7ED957]";
+        explanation = (
+          <>
+            Você apostou <strong>{brl(amount)}</strong> e acertou! Recebeu{" "}
+            <strong className="text-[#7ED957]">{brl(settledAmount)}</strong>{" "}
+            de volta na carteira.
+          </>
+        );
+        resultLine = (
+          <span className="text-[#7ED957] font-bold">+{brl(profit)}</span>
+        );
+      } else {
+        // Won the bet but payout < stake (pari-mutuel + house commission)
+        borderClass = "border-[#D4A017]";
+        statusIcon = <Trophy className="h-3.5 w-3.5" />;
+        statusText = "ACERTOU MAS PERDEU";
+        statusColor = "text-[#D4A017]";
+        explanation = (
+          <>
+            Você apostou <strong>{brl(amount)}</strong> e acertou na escolha,
+            mas o prêmio distribuído foi de só{" "}
+            <strong className="text-[#D4A017]">{brl(settledAmount)}</strong> —
+            menos do que você tinha apostado. Por isso ainda saiu no prejuízo
+            de <strong className="text-[#FF4757]">{brl(Math.abs(profit))}</strong>{" "}
+            nessa aposta.
+          </>
+        );
+        resultLine = (
+          <span className="text-[#FF4757] font-bold">
+            −{brl(Math.abs(profit))}
+          </span>
+        );
+      }
       break;
     }
     case "lost": {
