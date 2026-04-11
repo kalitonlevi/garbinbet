@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +20,9 @@ import {
   Undo2,
   RotateCcw,
   ArrowLeft,
+  Play,
+  Pause,
+  Timer,
 } from "lucide-react";
 import type {
   Event,
@@ -43,6 +46,21 @@ type ScoreAction = {
   kind: "points" | "advantage" | "penalty";
 };
 
+const TIMER_PRESETS: { label: string; seconds: number }[] = [
+  { label: "5 min", seconds: 5 * 60 },
+  { label: "6 min", seconds: 6 * 60 },
+  { label: "7 min", seconds: 7 * 60 },
+  { label: "8 min", seconds: 8 * 60 },
+  { label: "10 min", seconds: 10 * 60 },
+];
+
+function formatTime(totalSeconds: number) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m.toString().padStart(2, "0")}:${r.toString().padStart(2, "0")}`;
+}
+
 const SCORE_ACTIONS: ScoreAction[] = [
   { key: "takedown",      label: "Queda",            shortLabel: "Queda",   value: 2, kind: "points" },
   { key: "sweep",         label: "Raspagem",         shortLabel: "Raspag.", value: 2, kind: "points" },
@@ -64,6 +82,70 @@ export default function AdminScoringPage() {
   const [filterEventId, setFilterEventId] = useState("");
   const [selectedFightId, setSelectedFightId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Timer state (countdown in seconds)
+  const [timerDuration, setTimerDuration] = useState(5 * 60);
+  const [timerRemaining, setTimerRemaining] = useState(5 * 60);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState("");
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!timerRunning) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+    intervalRef.current = setInterval(() => {
+      setTimerRemaining((prev) => {
+        if (prev <= 1) {
+          setTimerRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [timerRunning]);
+
+  // Reset timer when selecting a different fight
+  useEffect(() => {
+    setTimerRunning(false);
+    setTimerRemaining(timerDuration);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFightId]);
+
+  function applyTimerPreset(seconds: number) {
+    setTimerRunning(false);
+    setTimerDuration(seconds);
+    setTimerRemaining(seconds);
+  }
+
+  function applyCustomTimer() {
+    const m = parseInt(customMinutes, 10);
+    if (!Number.isFinite(m) || m <= 0 || m > 60) {
+      toast.error("Informe minutos entre 1 e 60");
+      return;
+    }
+    applyTimerPreset(m * 60);
+    setCustomMinutes("");
+  }
+
+  function toggleTimer() {
+    if (timerRemaining === 0) {
+      setTimerRemaining(timerDuration);
+    }
+    setTimerRunning((r) => !r);
+  }
+
+  function resetTimer() {
+    setTimerRunning(false);
+    setTimerRemaining(timerDuration);
+  }
 
   const loadData = useCallback(async () => {
     const [evRes, fRes] = await Promise.all([
@@ -262,6 +344,112 @@ export default function AdminScoringPage() {
             </Button>
           </div>
         </div>
+
+        {/* Timer */}
+        <Card
+          className="border-[var(--border-default)] overflow-hidden"
+          style={{ background: "var(--bg-card)" }}
+        >
+          <div className="h-1" style={{ background: "var(--brand-green)" }} />
+          <CardContent className="pt-5 space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <Timer className="h-5 w-5 text-[var(--brand-green)]" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                    Cronômetro
+                  </p>
+                  <p
+                    className={`font-heading text-5xl tabular-nums leading-none ${
+                      timerRemaining === 0
+                        ? "text-[var(--color-danger)] animate-pulse"
+                        : timerRunning
+                        ? "text-[var(--brand-green)]"
+                        : "text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {formatTime(timerRemaining)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={toggleTimer}
+                  className={
+                    timerRunning
+                      ? "bg-[var(--brand-gold)] text-[var(--bg-primary)] hover:bg-[var(--brand-gold)]/90 font-bold"
+                      : "bg-[var(--brand-green)] text-[var(--bg-primary)] hover:bg-[var(--brand-green)]/90 font-bold"
+                  }
+                >
+                  {timerRunning ? (
+                    <>
+                      <Pause className="h-3.5 w-3.5 mr-1" />
+                      Pausar
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-3.5 w-3.5 mr-1" />
+                      {timerRemaining === 0 ? "Reiniciar" : "Iniciar"}
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={resetTimer}
+                  className="border-[var(--border-default)] text-[var(--text-secondary)]"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  Reset
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mr-1">
+                Tempo:
+              </span>
+              {TIMER_PRESETS.map((preset) => {
+                const active = timerDuration === preset.seconds;
+                return (
+                  <Button
+                    key={preset.seconds}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => applyTimerPreset(preset.seconds)}
+                    className={`h-7 text-xs ${
+                      active
+                        ? "border-[var(--brand-green)] text-[var(--brand-green)]"
+                        : "border-[var(--border-default)] text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    {preset.label}
+                  </Button>
+                );
+              })}
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={customMinutes}
+                  onChange={(e) => setCustomMinutes(e.target.value)}
+                  placeholder="min"
+                  className="h-7 w-16 rounded-md border border-[var(--border-default)] bg-[var(--bg-elevated)] px-2 text-xs text-[var(--text-primary)]"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={applyCustomTimer}
+                  className="h-7 text-xs border-[var(--border-default)] text-[var(--text-secondary)]"
+                >
+                  Aplicar
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {fighters.map((fighter) => {
