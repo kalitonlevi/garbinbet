@@ -770,13 +770,13 @@ function GameView({
             className="rounded-xl border-2 border-[#FF4757] p-4 text-center"
             style={{ background: "#16161F" }}
           >
-            <div className="h-20 w-20 mx-auto mb-2 rounded-full border-2 border-[#FF4757] overflow-hidden">
+            <div className="h-24 w-24 mx-auto mb-2 rounded-full border-2 border-[#FF4757] bg-[#FF4757]/15 p-2 flex items-center justify-center">
               <Image
                 src="/dj.png"
                 alt="DJ"
-                width={80}
-                height={80}
-                className="object-cover h-full w-full"
+                width={96}
+                height={96}
+                className="object-contain h-full w-full"
                 draggable={false}
               />
             </div>
