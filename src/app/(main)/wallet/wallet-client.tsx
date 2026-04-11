@@ -21,9 +21,12 @@ import {
   Copy,
   Check,
   Loader2,
+  Scale,
+  ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // PIX key for deposits - easy to change
 const ADMIN_PIX_KEY = "8248870c-f796-45e3-ac79-c828b2641eed";
@@ -167,6 +170,26 @@ export function WalletClient({ balance, userPixKey, transactions }: Props) {
           Sacar
         </Button>
       </div>
+
+      {/* Prestação de contas */}
+      <Link
+        href="/wallet/report"
+        className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#2A2A3A] hover:border-[#D4A017]/50 transition-colors"
+        style={{ background: "#16161F" }}
+      >
+        <div className="h-10 w-10 rounded-lg bg-[#D4A017]/10 flex items-center justify-center shrink-0">
+          <Scale className="h-5 w-5 text-[#D4A017]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-[#F0F0F0]">
+            Prestação de contas
+          </p>
+          <p className="text-[11px] text-[#9999AA] leading-tight">
+            Veja cada aposta e o saldo geral de ganhos e perdas
+          </p>
+        </div>
+        <ChevronRight className="h-5 w-5 text-[#6B6B80] shrink-0" />
+      </Link>
 
       {/* Transaction history */}
       <div>
