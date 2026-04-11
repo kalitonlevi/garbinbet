@@ -1,8 +1,12 @@
 "use server";
 
-import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+  MINES_MAX_BET,
+  MINES_MAX_PAYOUT,
+  MINES_DAILY_CAP,
+} from "@/lib/mines-config";
 
 // Mines is admin-only. Every action re-verifies the role — the page-level
 // redirect is UX, this is the real security boundary.
@@ -24,60 +28,6 @@ async function requireAdmin() {
   }
   return { ok: true as const, supabase, user };
 }
-
-// ============================================
-// Provably fair mine position generation
-// ============================================
-// Uses HMAC-SHA256(server_seed, client_seed:nonce) as PRNG source.
-// Consumes 8 hex chars (4 bytes, u32) per pick. If the HMAC runs out,
-// rehashes with an incrementing counter. Fisher-Yates-style elimination
-// guarantees uniqueness.
-function generateMinePositions(
-  serverSeed: string,
-  clientSeed: string,
-  nonce: number,
-  minesCount: number
-): number[] {
-  const available: number[] = [];
-  for (let i = 0; i < 25; i++) available.push(i);
-  const picked: number[] = [];
-
-  let counter = 0;
-  while (picked.length < minesCount) {
-    const hash = crypto
-      .createHmac("sha256", serverSeed)
-      .update(`${clientSeed}:${nonce}:${counter}`)
-      .digest("hex");
-
-    for (
-      let offset = 0;
-      offset + 8 <= hash.length && picked.length < minesCount;
-      offset += 8
-    ) {
-      const u32 = parseInt(hash.substring(offset, offset + 8), 16);
-      const index = u32 % available.length;
-      picked.push(available[index]);
-      available.splice(index, 1);
-    }
-    counter++;
-  }
-
-  return picked.sort((a, b) => a - b);
-}
-
-function sha256Hex(input: string): string {
-  return crypto.createHash("sha256").update(input).digest("hex");
-}
-
-// ============================================
-// Server Actions
-// ============================================
-
-import {
-  MINES_MAX_BET,
-  MINES_MAX_PAYOUT,
-  MINES_DAILY_CAP,
-} from "@/lib/mines-config";
 
 export type StartGameResult = {
   gameId: string;
@@ -120,36 +70,18 @@ export async function startGame(
 
     const auth = await requireAdmin();
     if (!auth.ok) return { ok: false, error: auth.error };
-    const { supabase, user } = auth;
+    const { supabase } = auth;
 
-    // Generate provably fair seeds
-    const serverSeed = crypto.randomBytes(32).toString("hex");
-    const serverSeedHash = sha256Hex(serverSeed);
     const cleanClientSeed = (clientSeed ?? "default").trim() || "default";
 
-    // Compute nonce client-side for position generation. DB also recomputes
-    // its own nonce; we use a fresh one here just for the HMAC input so the
-    // client can later re-derive positions using the server_seed reveal.
-    const { count } = await supabase
-      .from("mines_games")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    const nonce = (count ?? 0) + 1;
-
-    const minePositions = generateMinePositions(
-      serverSeed,
-      cleanClientSeed,
-      nonce,
-      minesCount
-    );
-
+    // The DB (mines_start_game) now generates the server_seed, the hash
+    // commitment, and the mine positions internally using pgcrypto. We
+    // don't touch any of that here — the caller has zero influence over
+    // which tiles are mines, which closes the provably-fair loop.
     const { data, error } = await supabase.rpc("mines_start_game", {
       p_bet_amount: betAmount,
       p_mines_count: minesCount,
-      p_server_seed: serverSeed,
-      p_server_seed_hash: serverSeedHash,
       p_client_seed: cleanClientSeed,
-      p_mine_positions: minePositions,
     });
 
     if (error) return { ok: false, error: error.message };
