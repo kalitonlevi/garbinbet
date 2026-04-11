@@ -26,10 +26,17 @@ import {
   startGame,
   revealTile,
   cashout,
+  getDailyWin,
   type ActiveGame,
+  type DailyWin,
 } from "@/app/actions/mines";
+import {
+  MINES_MAX_BET,
+  MINES_MAX_PAYOUT,
+  MINES_DAILY_CAP,
+} from "@/lib/mines-config";
 
-const BET_PRESETS = [5, 10, 25, 50];
+const BET_PRESETS = [1, 2, 5, 10];
 const MINES_PRESETS: { count: number; label: string; color: string }[] = [
   { count: 1, label: "Fácil", color: "#7ED957" },
   { count: 3, label: "Normal", color: "#F5C542" },
@@ -58,11 +65,13 @@ type FinishedInfo = {
   payout: number;
   multiplier: number;
   autoCashout?: boolean;
+  capped?: boolean;
 };
 
 type Props = {
   balance: number;
   initialGame: ActiveGame | null;
+  initialDaily: DailyWin | null;
 };
 
 function brl(v: number) {
@@ -87,9 +96,10 @@ function previewMultiplier(revealedCount: number, minesCount: number): number {
   return Math.floor(mult * 100) / 100;
 }
 
-export function MinesClient({ balance, initialGame }: Props) {
+export function MinesClient({ balance, initialGame, initialDaily }: Props) {
   const router = useRouter();
   const [currentBalance, setCurrentBalance] = useState(balance);
+  const [daily, setDaily] = useState<DailyWin | null>(initialDaily);
   const [phase, setPhase] = useState<Phase>(initialGame ? "playing" : "bet");
   const [game, setGame] = useState<GameState | null>(
     initialGame
@@ -112,7 +122,7 @@ export function MinesClient({ balance, initialGame }: Props) {
   const [revealingPos, setRevealingPos] = useState<number | null>(null);
 
   // Bet controls
-  const [betAmount, setBetAmount] = useState<number>(5);
+  const [betAmount, setBetAmount] = useState<number>(1);
   const [customBet, setCustomBet] = useState<string>("");
   const [minesCount, setMinesCount] = useState<number>(3);
   const [clientSeed, setClientSeed] = useState<string>("default");
@@ -141,12 +151,16 @@ export function MinesClient({ balance, initialGame }: Props) {
   }
 
   function handleStart() {
-    if (effectiveBet < 1 || effectiveBet > 200) {
-      toast.error("Aposta deve estar entre R$ 1,00 e R$ 200,00");
+    if (effectiveBet < 1 || effectiveBet > MINES_MAX_BET) {
+      toast.error(`Aposta deve estar entre R$ 1,00 e R$ ${MINES_MAX_BET},00`);
       return;
     }
     if (effectiveBet > currentBalance) {
       toast.error("Saldo insuficiente");
+      return;
+    }
+    if (daily && daily.remaining <= 0) {
+      toast.error("Você atingiu o limite diário de ganhos no Mines");
       return;
     }
 
@@ -168,10 +182,20 @@ export function MinesClient({ balance, initialGame }: Props) {
         nonce: res.data.nonce,
       });
       setCurrentBalance(res.data.newBalance);
+      setDaily({
+        dailyProfit: res.data.dailyProfit,
+        dailyCap: res.data.dailyCap,
+        remaining: Math.max(res.data.dailyCap - res.data.dailyProfit, 0),
+      });
       setPhase("playing");
       setFinished(null);
       setLastHitPosition(null);
     });
+  }
+
+  async function refreshDaily() {
+    const d = await getDailyWin();
+    if (d) setDaily(d);
   }
 
   function handleReveal(position: number) {
@@ -201,6 +225,7 @@ export function MinesClient({ balance, initialGame }: Props) {
         });
         setPhase("lost");
         router.refresh();
+        refreshDaily();
         return;
       }
 
@@ -220,12 +245,14 @@ export function MinesClient({ balance, initialGame }: Props) {
           payout: res.data.payout,
           multiplier: res.data.multiplier,
           autoCashout: true,
+          capped: res.data.capped,
         });
         if (res.data.newBalance !== undefined) {
           setCurrentBalance(res.data.newBalance);
         }
         setPhase("won");
         router.refresh();
+        refreshDaily();
       }
     });
   }
@@ -248,10 +275,12 @@ export function MinesClient({ balance, initialGame }: Props) {
         serverSeed: res.data.serverSeed,
         payout: res.data.payout,
         multiplier: res.data.multiplier,
+        capped: res.data.capped,
       });
       setCurrentBalance(res.data.newBalance);
       setPhase("won");
       router.refresh();
+      refreshDaily();
     });
   }
 
@@ -298,6 +327,39 @@ export function MinesClient({ balance, initialGame }: Props) {
         </span>
       </div>
 
+      {/* Limits strip */}
+      <div
+        className="grid grid-cols-2 gap-2 rounded-xl border border-[#2A2A3A] px-3 py-2"
+        style={{ background: "#16161F" }}
+      >
+        <div>
+          <p className="text-[9px] uppercase tracking-wider text-[#6B6B80]">
+            Ganho máx por aposta
+          </p>
+          <p className="text-sm font-bold text-[#F5C542]">
+            {brl(MINES_MAX_PAYOUT)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[9px] uppercase tracking-wider text-[#6B6B80]">
+            Ganhos hoje
+          </p>
+          <p
+            className={`text-sm font-bold ${
+              daily && daily.remaining <= 0
+                ? "text-[#FF4757]"
+                : "text-[#7ED957]"
+            }`}
+          >
+            {brl(daily?.dailyProfit ?? 0)}
+            <span className="text-[10px] text-[#6B6B80] font-normal">
+              {" "}
+              / {brl(daily?.dailyCap ?? MINES_DAILY_CAP)}
+            </span>
+          </p>
+        </div>
+      </div>
+
       {phase === "bet" && (
         <BetView
           betAmount={betAmount}
@@ -312,7 +374,8 @@ export function MinesClient({ balance, initialGame }: Props) {
           setClientSeed={setClientSeed}
           onStart={handleStart}
           loading={isPending}
-          maxBet={Math.min(200, currentBalance)}
+          maxBet={Math.min(MINES_MAX_BET, currentBalance)}
+          dailyBlocked={(daily?.remaining ?? 1) <= 0}
         />
       )}
 
@@ -415,6 +478,7 @@ function BetView({
   onStart,
   loading,
   maxBet,
+  dailyBlocked,
 }: {
   betAmount: number;
   customBet: string;
@@ -429,7 +493,10 @@ function BetView({
   onStart: () => void;
   loading: boolean;
   maxBet: number;
+  dailyBlocked: boolean;
 }) {
+  const capMultiplier =
+    effectiveBet > 0 ? MINES_MAX_PAYOUT / effectiveBet : Infinity;
   return (
     <div className="space-y-4">
       {/* Bet amount */}
@@ -518,20 +585,29 @@ function BetView({
 
         {/* Multiplier preview */}
         <div className="flex items-center justify-between gap-2 pt-1">
-          {multiplierTable.map(({ k, mult }) => (
-            <div
-              key={k}
-              className="flex-1 text-center rounded-md border border-[#2A2A3A] py-1.5"
-              style={{ background: "#0A0A0F" }}
-            >
-              <p className="text-[9px] text-[#6B6B80] uppercase">
-                {k} seg{k > 1 ? "." : "."}
-              </p>
-              <p className="text-sm font-bold text-[#F5C542]">
-                {fmtMult(mult)}
-              </p>
-            </div>
-          ))}
+          {multiplierTable.map(({ k, mult }) => {
+            const exceedsCap = mult > capMultiplier;
+            return (
+              <div
+                key={k}
+                className={`flex-1 text-center rounded-md border py-1.5 ${
+                  exceedsCap ? "border-[#FF4757]/40" : "border-[#2A2A3A]"
+                }`}
+                style={{ background: "#0A0A0F" }}
+              >
+                <p className="text-[9px] text-[#6B6B80] uppercase">
+                  {k} seg.
+                </p>
+                <p
+                  className={`text-sm font-bold ${
+                    exceedsCap ? "text-[#FF4757]" : "text-[#F5C542]"
+                  }`}
+                >
+                  {exceedsCap ? "TETO" : fmtMult(mult)}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -552,17 +628,28 @@ function BetView({
       {/* Play button */}
       <Button
         onClick={onStart}
-        disabled={loading || effectiveBet < 1 || effectiveBet > maxBet}
+        disabled={
+          loading ||
+          dailyBlocked ||
+          effectiveBet < 1 ||
+          effectiveBet > maxBet
+        }
         className="w-full h-14 bg-[#7ED957] text-[#0A0A0F] font-heading text-xl hover:bg-[#7ED957]/90 disabled:bg-[#2A2A3A] disabled:text-[#6B6B80]"
       >
         {loading ? (
           <Loader2 className="h-5 w-5 animate-spin" />
+        ) : dailyBlocked ? (
+          "LIMITE DIÁRIO ATINGIDO"
         ) : (
           <>
             JOGAR <span className="ml-2">{brl(effectiveBet)}</span>
           </>
         )}
       </Button>
+      <p className="text-[10px] text-center text-[#6B6B80]">
+        Aposta máx {brl(MINES_MAX_BET)} • Ganho máx {brl(MINES_MAX_PAYOUT)} por
+        jogo • Limite diário {brl(MINES_DAILY_CAP)}
+      </p>
     </div>
   );
 }
@@ -708,10 +795,14 @@ function GameView({
           >
             <Trophy className="h-10 w-10 text-[#7ED957] mx-auto mb-2" />
             <p className="font-heading text-2xl text-[#7ED957] font-bold">
-              GANHOU! 🏆
+              {finished.capped ? "TETO BATIDO! 🎯" : "GANHOU! 🏆"}
             </p>
             <p className="text-[11px] text-[#9999AA] mt-1">
-              {finished.autoCashout
+              {finished.capped
+                ? `Retirada automática no teto da casa (${fmtMult(
+                    finished.multiplier
+                  )} não paga além de R$ 100,00)`
+                : finished.autoCashout
                 ? "Todas as tiles seguras reveladas! Auto-cashout."
                 : `Retirada em ${fmtMult(finished.multiplier)}`}
             </p>

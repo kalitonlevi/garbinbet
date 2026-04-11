@@ -73,6 +73,12 @@ function sha256Hex(input: string): string {
 // Server Actions
 // ============================================
 
+import {
+  MINES_MAX_BET,
+  MINES_MAX_PAYOUT,
+  MINES_DAILY_CAP,
+} from "@/lib/mines-config";
+
 export type StartGameResult = {
   gameId: string;
   betAmount: number;
@@ -83,6 +89,9 @@ export type StartGameResult = {
   newBalance: number;
   revealedPositions: number[];
   multiplier: number;
+  maxPayout: number;
+  dailyCap: number;
+  dailyProfit: number;
 };
 
 export async function startGame(
@@ -91,8 +100,15 @@ export async function startGame(
   clientSeed?: string
 ): Promise<{ ok: true; data: StartGameResult } | { ok: false; error: string }> {
   try {
-    if (!Number.isFinite(betAmount) || betAmount < 1 || betAmount > 200) {
-      return { ok: false, error: "Aposta deve estar entre R$ 1,00 e R$ 200,00" };
+    if (
+      !Number.isFinite(betAmount) ||
+      betAmount < 1 ||
+      betAmount > MINES_MAX_BET
+    ) {
+      return {
+        ok: false,
+        error: `Aposta deve estar entre R$ 1,00 e R$ ${MINES_MAX_BET},00`,
+      };
     }
     if (
       !Number.isInteger(minesCount) ||
@@ -154,6 +170,9 @@ export async function startGame(
         newBalance: Number(data.new_balance),
         revealedPositions: [],
         multiplier: 1,
+        maxPayout: Number(data.max_payout ?? MINES_MAX_PAYOUT),
+        dailyCap: Number(data.daily_cap ?? MINES_DAILY_CAP),
+        dailyProfit: Number(data.daily_profit ?? 0),
       },
     };
   } catch (err) {
@@ -169,6 +188,7 @@ export type RevealResult =
       revealedCount: number;
       payout: number;
       autoCashout?: boolean;
+      capped?: boolean;
       newBalance?: number;
       minePositions?: number[];
       serverSeed?: string;
@@ -228,6 +248,7 @@ export async function revealTile(
       revealedCount: Number(data.revealed_count),
       payout: Number(data.payout),
       autoCashout: Boolean(data.auto_cashout),
+      capped: Boolean(data.capped),
     };
 
     if (data.auto_cashout) {
@@ -248,6 +269,7 @@ export type CashoutResult = {
   payout: number;
   multiplier: number;
   revealedCount: number;
+  capped: boolean;
   minePositions: number[];
   serverSeed: string;
   newBalance: number;
@@ -279,6 +301,7 @@ export async function cashout(
         payout: Number(data.payout),
         multiplier: Number(data.multiplier),
         revealedCount: Number(data.revealed_count),
+        capped: Boolean(data.capped),
         minePositions: (data.mine_positions as number[]) ?? [],
         serverSeed: data.server_seed as string,
         newBalance: Number(data.new_balance),
@@ -287,6 +310,52 @@ export async function cashout(
   } catch (err) {
     return { ok: false, error: (err as Error).message };
   }
+}
+
+export type HouseStatus = {
+  totalWallets: number;
+  reserve: number;
+  reservePct: number;
+  maxPayout: number;
+  acceptingBets: boolean;
+  activeGames: number;
+  housePnl24h: number;
+};
+
+export async function getHouseStatus(): Promise<HouseStatus | null> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+  const { supabase } = auth;
+  const { data, error } = await supabase.rpc("mines_house_status");
+  if (error || !data) return null;
+  return {
+    totalWallets: Number(data.total_wallets),
+    reserve: Number(data.reserve),
+    reservePct: Number(data.reserve_pct),
+    maxPayout: Number(data.max_payout),
+    acceptingBets: Boolean(data.accepting_bets),
+    activeGames: Number(data.active_games),
+    housePnl24h: Number(data.house_pnl_24h),
+  };
+}
+
+export type DailyWin = {
+  dailyProfit: number;
+  dailyCap: number;
+  remaining: number;
+};
+
+export async function getDailyWin(): Promise<DailyWin | null> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+  const { supabase } = auth;
+  const { data, error } = await supabase.rpc("mines_daily_user_win");
+  if (error || !data) return null;
+  return {
+    dailyProfit: Number(data.daily_profit),
+    dailyCap: Number(data.daily_cap),
+    remaining: Number(data.remaining),
+  };
 }
 
 export type ActiveGame = {

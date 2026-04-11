@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import { getActiveGame } from "@/app/actions/mines";
+import { getActiveGame, getDailyWin } from "@/app/actions/mines";
 import { MinesClient } from "./mines-client";
 
 export default async function MinesPage() {
@@ -24,12 +24,16 @@ export default async function MinesPage() {
     .eq("user_id", user.id)
     .single();
 
-  const activeGame = await getActiveGame();
+  const [activeGame, daily] = await Promise.all([
+    getActiveGame(),
+    getDailyWin(),
+  ]);
 
   return (
     <MinesClient
       balance={Number(wallet?.balance ?? 0)}
       initialGame={activeGame}
+      initialDaily={daily}
     />
   );
 }

@@ -15,8 +15,14 @@ import {
   Wallet,
   Clock,
   CheckCircle,
+  Bomb,
+  ShieldCheck,
+  ShieldAlert,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { WalletCardWithTooltip } from "./wallet-card-tooltip";
+import { getHouseStatus } from "@/app/actions/mines";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -120,6 +126,7 @@ export default async function AdminDashboardPage() {
   ];
 
   const recentBets = recentBetsRes.data ?? [];
+  const minesStatus = await getHouseStatus();
 
   return (
     <div className="space-y-8">
@@ -179,6 +186,108 @@ export default async function AdminDashboardPage() {
           );
         })}
       </div>
+
+      {/* Mines House Exposure */}
+      {minesStatus && (
+        <div>
+          <h2 className="font-heading text-xl text-[var(--text-primary)] mb-3 flex items-center gap-2">
+            <Bomb className="h-5 w-5 text-[var(--brand-gold)]" />
+            EXPOSIÇÃO MINES
+          </h2>
+          <Card
+            className="border-[var(--border-default)] overflow-hidden"
+            style={{ background: "var(--bg-card)" }}
+          >
+            <div
+              className="h-1"
+              style={{
+                background: minesStatus.acceptingBets
+                  ? "var(--brand-green)"
+                  : "var(--color-danger)",
+              }}
+            />
+            <CardContent className="pt-4 pb-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+                    Estado
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    {minesStatus.acceptingBets ? (
+                      <>
+                        <ShieldCheck className="h-4 w-4 text-[var(--brand-green)]" />
+                        <span className="text-sm font-bold text-[var(--brand-green)]">
+                          Aceitando
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldAlert className="h-4 w-4 text-[var(--color-danger)]" />
+                        <span className="text-sm font-bold text-[var(--color-danger)]">
+                          Bloqueado
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+                    Reserva (30%)
+                  </p>
+                  <p className="text-sm font-bold text-[var(--brand-gold)]">
+                    R$ {minesStatus.reserve.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)]">
+                    de R$ {minesStatus.totalWallets.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+                    Pior caso por jogo
+                  </p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">
+                    R$ {minesStatus.maxPayout.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)]">
+                    {minesStatus.activeGames} jogo
+                    {minesStatus.activeGames === 1 ? "" : "s"} ativo
+                    {minesStatus.activeGames === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+                    Casa 24h
+                  </p>
+                  <div className="flex items-center gap-1">
+                    {minesStatus.housePnl24h >= 0 ? (
+                      <TrendingUp className="h-4 w-4 text-[var(--brand-green)]" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-[var(--color-danger)]" />
+                    )}
+                    <p
+                      className={`text-sm font-bold ${
+                        minesStatus.housePnl24h >= 0
+                          ? "text-[var(--brand-green)]"
+                          : "text-[var(--color-danger)]"
+                      }`}
+                    >
+                      {minesStatus.housePnl24h >= 0 ? "+" : "−"}R${" "}
+                      {Math.abs(minesStatus.housePnl24h).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {!minesStatus.acceptingBets && (
+                <p className="text-[11px] text-[var(--color-danger)] mt-3 leading-relaxed">
+                  ⚠️ Reserva abaixo do teto de R$ {minesStatus.maxPayout.toFixed(2)}.
+                  Novos jogos de Mines serão rejeitados até o caixa voltar a
+                  cobrir um pior caso.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Recent Bets Table */}
       <div>
