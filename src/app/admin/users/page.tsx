@@ -1,14 +1,21 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +37,9 @@ import {
   ArrowUpCircle,
   Shield,
   Search,
+  Filter,
+  X,
+  ArrowUpDown,
 } from "lucide-react";
 
 const transactionSchema = z.object({
@@ -53,10 +63,23 @@ type UserRow = {
   email?: string;
 };
 
+type BalanceFilter = "all" | "with" | "without";
+type PixFilter = "all" | "with" | "without";
+type WageredFilter = "all" | "yes" | "no";
+type RoleFilter = "all" | "admin" | "user";
+type SortField = "name" | "balance" | "wagered";
+type SortDir = "asc" | "desc";
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [balanceFilter, setBalanceFilter] = useState<BalanceFilter>("all");
+  const [pixFilter, setPixFilter] = useState<PixFilter>("all");
+  const [wageredFilter, setWageredFilter] = useState<WageredFilter>("all");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [sortField, setSortField] = useState<SortField>("balance");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"deposit" | "withdraw">("deposit");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
@@ -200,15 +223,105 @@ export default function AdminUsersPage() {
     }
   }
 
-  const filteredUsers = search
-    ? users.filter(
-        (u) =>
-          u.profile?.full_name
-            ?.toLowerCase()
-            .includes(search.toLowerCase()) ??
-          false
-      )
-    : users;
+  const filteredUsers = useMemo(() => {
+    const searchLower = search.trim().toLowerCase();
+
+    const filtered = users.filter((u) => {
+      // Search (name, phone, pix)
+      if (searchLower) {
+        const haystack = [
+          u.profile?.full_name,
+          u.profile?.phone,
+          u.profile?.pix_key,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(searchLower)) return false;
+      }
+
+      // Balance filter
+      const bal = Number(u.balance);
+      if (balanceFilter === "with" && bal <= 0) return false;
+      if (balanceFilter === "without" && bal > 0) return false;
+
+      // PIX filter
+      const hasPix = !!u.profile?.pix_key?.trim();
+      if (pixFilter === "with" && !hasPix) return false;
+      if (pixFilter === "without" && hasPix) return false;
+
+      // Wagered filter
+      if (wageredFilter === "yes" && u.total_wagered <= 0) return false;
+      if (wageredFilter === "no" && u.total_wagered > 0) return false;
+
+      // Role filter
+      const role = u.profile?.role ?? "user";
+      if (roleFilter === "admin" && role !== "admin") return false;
+      if (roleFilter === "user" && role === "admin") return false;
+
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "name") {
+        cmp = (a.profile?.full_name ?? "").localeCompare(
+          b.profile?.full_name ?? "",
+          "pt-BR"
+        );
+      } else if (sortField === "balance") {
+        cmp = Number(a.balance) - Number(b.balance);
+      } else if (sortField === "wagered") {
+        cmp = a.total_wagered - b.total_wagered;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return sorted;
+  }, [
+    users,
+    search,
+    balanceFilter,
+    pixFilter,
+    wageredFilter,
+    roleFilter,
+    sortField,
+    sortDir,
+  ]);
+
+  const totals = useMemo(() => {
+    let balance = 0;
+    let wagered = 0;
+    for (const u of filteredUsers) {
+      balance += Number(u.balance);
+      wagered += u.total_wagered;
+    }
+    return { balance, wagered, count: filteredUsers.length };
+  }, [filteredUsers]);
+
+  const hasActiveFilters =
+    balanceFilter !== "all" ||
+    pixFilter !== "all" ||
+    wageredFilter !== "all" ||
+    roleFilter !== "all" ||
+    search.trim() !== "";
+
+  function clearFilters() {
+    setSearch("");
+    setBalanceFilter("all");
+    setPixFilter("all");
+    setWageredFilter("all");
+    setRoleFilter("all");
+  }
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir(field === "name" ? "asc" : "desc");
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -225,10 +338,107 @@ export default function AdminUsersPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome..."
+          placeholder="Buscar por nome, telefone ou PIX..."
           className="pl-10 bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
         />
       </div>
+
+      {/* Filters */}
+      <Card
+        className="border-[var(--border-default)] p-4"
+        style={{ background: "var(--bg-card)" }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="h-4 w-4 text-[var(--brand-gold)]" />
+          <p className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+            Filtros
+          </p>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="ml-auto flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--brand-gold)] transition-colors"
+            >
+              <X className="h-3 w-3" /> Limpar
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <FilterSelect
+            label="Saldo"
+            value={balanceFilter}
+            onChange={(v) => setBalanceFilter(v as BalanceFilter)}
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "with", label: "Com saldo (> 0)" },
+              { value: "without", label: "Sem saldo" },
+            ]}
+          />
+          <FilterSelect
+            label="PIX"
+            value={pixFilter}
+            onChange={(v) => setPixFilter(v as PixFilter)}
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "with", label: "Com chave PIX" },
+              { value: "without", label: "Sem chave PIX" },
+            ]}
+          />
+          <FilterSelect
+            label="Apostas"
+            value={wageredFilter}
+            onChange={(v) => setWageredFilter(v as WageredFilter)}
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "yes", label: "Já apostou" },
+              { value: "no", label: "Nunca apostou" },
+            ]}
+          />
+          <FilterSelect
+            label="Tipo"
+            value={roleFilter}
+            onChange={(v) => setRoleFilter(v as RoleFilter)}
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "admin", label: "Admins" },
+              { value: "user", label: "Usuários" },
+            ]}
+          />
+        </div>
+      </Card>
+
+      {/* Totals row for filtered selection */}
+      {!loading && (
+        <div
+          className="grid grid-cols-3 gap-3 rounded-lg border border-[var(--border-default)] p-3"
+          style={{ background: "var(--bg-card)" }}
+        >
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+              Usuários
+            </p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">
+              {totals.count}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+              Soma dos saldos
+            </p>
+            <p className="text-lg font-bold text-[var(--brand-gold)]">
+              R$ {totals.balance.toFixed(2)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+              Total apostado
+            </p>
+            <p className="text-lg font-bold text-[var(--text-secondary)]">
+              R$ {totals.wagered.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-12">
@@ -244,16 +454,33 @@ export default function AdminUsersPage() {
               <TableHeader>
                 <TableRow className="border-[var(--border-default)] hover:bg-transparent">
                   <TableHead className="text-[var(--text-muted)] text-xs">
-                    Nome
+                    <SortHeader
+                      label="Nome"
+                      active={sortField === "name"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("name")}
+                    />
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs">
                     PIX
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs text-right">
-                    Saldo
+                    <SortHeader
+                      label="Saldo"
+                      active={sortField === "balance"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("balance")}
+                      align="right"
+                    />
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs text-right">
-                    Total Apostado
+                    <SortHeader
+                      label="Total Apostado"
+                      active={sortField === "wagered"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("wagered")}
+                      align="right"
+                    />
                   </TableHead>
                   <TableHead className="text-[var(--text-muted)] text-xs text-center">
                     Role
@@ -425,5 +652,69 @@ export default function AdminUsersPage() {
           </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+        {label}
+      </Label>
+      <Select value={value} onValueChange={(v) => v && onChange(v)}>
+        <SelectTrigger className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)] h-9 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value} className="text-xs">
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function SortHeader({
+  label,
+  active,
+  dir,
+  onClick,
+  align = "left",
+}: {
+  label: string;
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: () => void;
+  align?: "left" | "right";
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1 text-xs uppercase tracking-wider transition-colors ${
+        active
+          ? "text-[var(--brand-gold)]"
+          : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+      } ${align === "right" ? "ml-auto" : ""}`}
+    >
+      {label}
+      <ArrowUpDown
+        className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"} ${
+          active && dir === "asc" ? "rotate-180" : ""
+        }`}
+      />
+    </button>
   );
 }
