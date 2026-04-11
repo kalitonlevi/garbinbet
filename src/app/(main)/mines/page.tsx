@@ -10,28 +10,27 @@ export default async function MinesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Mines is admin-only — hide the route from regular users.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") notFound();
-
   const { data: wallet } = await supabase
     .from("wallets")
     .select("balance")
     .eq("user_id", user.id)
     .single();
 
+  const balance = Number(wallet?.balance ?? 0);
+
+  // Mines only shows to users with money on the table. If the user has
+  // a game already running (somehow hit 0 balance mid-game), we still
+  // let them finish it.
   const [activeGame, daily] = await Promise.all([
     getActiveGame(),
     getDailyWin(),
   ]);
 
+  if (balance <= 0 && !activeGame) notFound();
+
   return (
     <MinesClient
-      balance={Number(wallet?.balance ?? 0)}
+      balance={balance}
       initialGame={activeGame}
       initialDaily={daily}
     />

@@ -8,23 +8,16 @@ import {
   MINES_DAILY_CAP,
 } from "@/lib/mines-config";
 
-// Mines is admin-only. Every action re-verifies the role — the page-level
-// redirect is UX, this is the real security boundary.
-async function requireAdmin() {
+// Every action re-verifies authentication. The DB-level RPCs also use
+// auth.uid() as a second line of defense; this helper just short-circuits
+// the round-trip for unauthenticated callers.
+async function requireAuth() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
     return { ok: false as const, error: "Não autenticado", supabase, user: null };
-  }
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") {
-    return { ok: false as const, error: "Acesso negado", supabase, user };
   }
   return { ok: true as const, supabase, user };
 }
@@ -68,7 +61,7 @@ export async function startGame(
       return { ok: false, error: "Número de minas inválido (1 a 24)" };
     }
 
-    const auth = await requireAdmin();
+    const auth = await requireAuth();
     if (!auth.ok) return { ok: false, error: auth.error };
     const { supabase } = auth;
 
@@ -144,7 +137,7 @@ export async function revealTile(
       return { ok: false, error: "Posição inválida" };
     }
 
-    const auth = await requireAdmin();
+    const auth = await requireAuth();
     if (!auth.ok) return { ok: false, error: auth.error };
     const { supabase } = auth;
 
@@ -214,7 +207,7 @@ export async function cashout(
 > {
   try {
     if (!gameId) return { ok: false, error: "Game id obrigatório" };
-    const auth = await requireAdmin();
+    const auth = await requireAuth();
     if (!auth.ok) return { ok: false, error: auth.error };
     const { supabase } = auth;
 
@@ -255,7 +248,7 @@ export type HouseStatus = {
 };
 
 export async function getHouseStatus(): Promise<HouseStatus | null> {
-  const auth = await requireAdmin();
+  const auth = await requireAuth();
   if (!auth.ok) return null;
   const { supabase } = auth;
   const { data, error } = await supabase.rpc("mines_house_status");
@@ -278,7 +271,7 @@ export type DailyWin = {
 };
 
 export async function getDailyWin(): Promise<DailyWin | null> {
-  const auth = await requireAdmin();
+  const auth = await requireAuth();
   if (!auth.ok) return null;
   const { supabase } = auth;
   const { data, error } = await supabase.rpc("mines_daily_user_win");
@@ -305,7 +298,7 @@ export type ActiveGame = {
 };
 
 export async function getActiveGame(): Promise<ActiveGame | null> {
-  const auth = await requireAdmin();
+  const auth = await requireAuth();
   if (!auth.ok) return null;
   const { supabase } = auth;
   const { data, error } = await supabase.rpc("mines_get_active_game");

@@ -16,22 +16,22 @@ type NavItem = {
   href: string;
   label: string;
   icon: typeof Swords;
-  adminOnly?: boolean;
+  requiresBalance?: boolean;
 };
 
 const navItems: NavItem[] = [
   { href: "/fights", label: "Lutas", icon: Swords },
   { href: "/brackets", label: "Chaves", icon: GitBranch },
   { href: "/fighters", label: "Atletas", icon: Users },
-  { href: "/mines", label: "Mines", icon: Bomb, adminOnly: true },
+  { href: "/mines", label: "Mines", icon: Bomb, requiresBalance: true },
   { href: "/my-bets", label: "Apostas", icon: Ticket },
   { href: "/wallet", label: "Carteira", icon: Wallet },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 
-export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
+export function BottomNav({ hasBalance = false }: { hasBalance?: boolean }) {
   const pathname = usePathname();
-  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+  const visibleItems = navItems.filter((item) => !item.requiresBalance || hasBalance);
 
   return (
     <nav

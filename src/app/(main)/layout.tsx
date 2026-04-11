@@ -51,7 +51,7 @@ export default async function MainLayout({
       <main className="flex-1 w-full max-w-[480px] mx-auto px-4 py-4 pb-24">
         {children}
       </main>
-      <BottomNav isAdmin={profile?.role === "admin"} />
+      <BottomNav hasBalance={Number(wallet?.balance ?? 0) > 0} />
       <WelcomeDialog />
     </div>
   );
