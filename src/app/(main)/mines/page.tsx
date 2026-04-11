@@ -65,10 +65,6 @@ function NoBalanceScreen() {
             <br />
             é preciso ter saldo na carteira pra apostar.
           </p>
-          <p className="text-xs text-[#9999AA] leading-relaxed pt-1">
-            Faça um depósito pelo PIX na sua carteira e volte pra testar
-            sua sorte contra o DJ. 🎯
-          </p>
         </div>
 
         <Link
