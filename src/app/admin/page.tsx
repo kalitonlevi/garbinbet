@@ -20,6 +20,9 @@ import {
   ShieldAlert,
   TrendingUp,
   TrendingDown,
+  Trophy,
+  XCircle,
+  Gem,
 } from "lucide-react";
 import { WalletCardWithTooltip } from "./wallet-card-tooltip";
 import { getHouseStatus } from "@/app/actions/mines";
@@ -27,24 +30,36 @@ import { getHouseStatus } from "@/app/actions/mines";
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  const [usersRes, walletsRes, pendingRes, settledRes, recentBetsRes, transactionsRes, marketOptionsRes, allBetsRes] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true }),
-      supabase.from("wallets").select("balance"),
-      supabase
-        .from("bets")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pending"),
-      supabase
-        .from("bets")
-        .select("*", { count: "exact", head: true })
-        .in("status", ["won", "lost"]),
-      supabase
-        .from("bets")
-        .select(
-          `
+  const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+
+  const [
+    usersRes,
+    walletsRes,
+    pendingRes,
+    settledRes,
+    recentBetsRes,
+    transactionsRes,
+    marketOptionsRes,
+    allBetsRes,
+    recentMinesRes,
+    mines24hRes,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true }),
+    supabase.from("wallets").select("balance"),
+    supabase
+      .from("bets")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("bets")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["won", "lost"]),
+    supabase
+      .from("bets")
+      .select(
+        `
           id, amount, status, created_at,
           profile:profiles!user_id(full_name),
           market_option:market_options!option_id(label),
@@ -55,13 +70,29 @@ export default async function AdminDashboardPage() {
             )
           )
         `
-        )
-        .order("created_at", { ascending: false })
-        .limit(5),
-      supabase.from("transactions").select("type,amount"),
-      supabase.from("market_options").select("total_pool,market_id"),
-      supabase.from("bets").select("amount,status,settled_amount,market_id"),
-    ]);
+      )
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase.from("transactions").select("type,amount"),
+    supabase.from("market_options").select("total_pool,market_id"),
+    supabase.from("bets").select("amount,status,settled_amount,market_id"),
+    supabase
+      .from("mines_games")
+      .select(
+        `
+          id, bet_amount, mines_count, status,
+          cashout_multiplier, cashout_amount, created_at, ended_at,
+          revealed_positions,
+          profile:profiles!user_id(full_name)
+        `
+      )
+      .order("created_at", { ascending: false })
+      .limit(12),
+    supabase
+      .from("mines_games")
+      .select("bet_amount, status, cashout_amount")
+      .gte("created_at", since24h),
+  ]);
 
   const totalWallets =
     walletsRes.data?.reduce((sum, w) => sum + Number(w.balance), 0) ?? 0;
@@ -127,6 +158,22 @@ export default async function AdminDashboardPage() {
 
   const recentBets = recentBetsRes.data ?? [];
   const minesStatus = await getHouseStatus();
+
+  // Recent Mines activity + 24h aggregates
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recentMines = (recentMinesRes.data ?? []) as any[];
+  const mines24h = mines24hRes.data ?? [];
+  const mines24hCount = mines24h.length;
+  const mines24hWagered = mines24h.reduce((s, g) => s + Number(g.bet_amount), 0);
+  const mines24hWon = mines24h.filter((g) => g.status === "won");
+  const mines24hLost = mines24h.filter((g) => g.status === "lost");
+  const mines24hPaid = mines24hWon.reduce((s, g) => s + Number(g.cashout_amount), 0);
+  // House PnL reconstructed (also present in minesStatus.housePnl24h, kept here
+  // for consistency with the counts shown next to it)
+  const mines24hWonStake = mines24hWon.reduce((s, g) => s + Number(g.bet_amount), 0);
+  const mines24hHouseNet =
+    mines24hLost.reduce((s, g) => s + Number(g.bet_amount), 0) + // kept from losers
+    (mines24hWonStake - mines24hPaid); // net on winners (usually negative)
 
   return (
     <div className="space-y-8">
@@ -289,6 +336,190 @@ export default async function AdminDashboardPage() {
         </div>
       )}
 
+      {/* Mines Recent Activity */}
+      <div>
+        <h2 className="font-heading text-xl text-[var(--text-primary)] mb-3 flex items-center gap-2">
+          <Gem className="h-5 w-5 text-[var(--brand-gold)]" />
+          ATIVIDADE RECENTE — MINES
+        </h2>
+
+        {/* 24h summary tiles */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <MiniStat
+            label="Jogos 24h"
+            value={String(mines24hCount)}
+            sub={`${mines24hWon.length} ganhos · ${mines24hLost.length} perdas`}
+          />
+          <MiniStat
+            label="Apostado 24h"
+            value={`R$ ${mines24hWagered.toFixed(2)}`}
+            color="var(--text-primary)"
+          />
+          <MiniStat
+            label="Pago em prêmios 24h"
+            value={`R$ ${mines24hPaid.toFixed(2)}`}
+            color="var(--brand-green)"
+          />
+          <MiniStat
+            label="Casa 24h"
+            value={`${mines24hHouseNet >= 0 ? "+" : "−"}R$ ${Math.abs(mines24hHouseNet).toFixed(2)}`}
+            color={mines24hHouseNet >= 0 ? "var(--brand-green)" : "var(--color-danger)"}
+          />
+        </div>
+
+        <Card
+          className="border-[var(--border-default)] overflow-hidden"
+          style={{ background: "var(--bg-card)" }}
+        >
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-[var(--border-default)] hover:bg-transparent">
+                  <TableHead className="text-[var(--text-muted)] text-xs">
+                    Jogador
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs text-center">
+                    Minas
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs text-right">
+                    Aposta
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs text-right">
+                    Retorno
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs text-right">
+                    Casa
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs text-center">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-[var(--text-muted)] text-xs text-right">
+                    Quando
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentMines.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center text-[var(--text-muted)] py-8"
+                    >
+                      Nenhum jogo ainda.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  recentMines.map((g) => {
+                    const bet = Number(g.bet_amount);
+                    const payout = Number(g.cashout_amount);
+                    // House net: kept bet on loss, bet - payout on win
+                    const houseNet =
+                      g.status === "won"
+                        ? bet - payout
+                        : g.status === "lost"
+                        ? bet
+                        : 0;
+                    const profile = Array.isArray(g.profile)
+                      ? g.profile[0]
+                      : g.profile;
+                    const revealedCount = Array.isArray(g.revealed_positions)
+                      ? g.revealed_positions.length
+                      : 0;
+                    return (
+                      <TableRow
+                        key={g.id}
+                        className="border-[var(--border-default)]"
+                      >
+                        <TableCell>
+                          <p className="text-sm text-[var(--text-primary)] font-medium">
+                            {profile?.full_name?.trim() || "—"}
+                          </p>
+                          <p className="text-[10px] text-[var(--text-muted)]">
+                            {revealedCount} revelad
+                            {revealedCount === 1 ? "a" : "as"}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-[var(--text-secondary)]">
+                          {g.mines_count}
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-[var(--brand-gold)] font-bold">
+                          R$ {bet.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {g.status === "won" ? (
+                            <div>
+                              <p className="text-[var(--brand-green)] font-bold">
+                                R$ {payout.toFixed(2)}
+                              </p>
+                              <p className="text-[10px] text-[var(--text-muted)]">
+                                {Number(g.cashout_multiplier).toFixed(2)}×
+                              </p>
+                            </div>
+                          ) : g.status === "lost" ? (
+                            <span className="text-[var(--text-muted)] line-through">
+                              R$ 0,00
+                            </span>
+                          ) : (
+                            <span className="text-[var(--color-warning)]">
+                              em jogo
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {g.status === "active" ? (
+                            <span className="text-[var(--text-muted)]">—</span>
+                          ) : (
+                            <span
+                              className={
+                                houseNet >= 0
+                                  ? "text-[var(--brand-green)] font-bold"
+                                  : "text-[var(--color-danger)] font-bold"
+                              }
+                            >
+                              {houseNet >= 0 ? "+" : "−"}R${" "}
+                              {Math.abs(houseNet).toFixed(2)}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {g.status === "won" ? (
+                            <Badge className="bg-[var(--brand-green)] text-[var(--bg-primary)] text-[10px] font-bold">
+                              <Trophy className="h-3 w-3 mr-0.5" />
+                              GANHOU
+                            </Badge>
+                          ) : g.status === "lost" ? (
+                            <Badge className="bg-[var(--color-danger)] text-white text-[10px]">
+                              <XCircle className="h-3 w-3 mr-0.5" />
+                              PERDEU
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="border-[var(--color-warning)] text-[var(--color-warning)] text-[10px]"
+                            >
+                              <Clock className="h-3 w-3 mr-0.5" />
+                              ATIVO
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right text-[10px] text-[var(--text-muted)]">
+                          {new Date(g.created_at).toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      </div>
+
       {/* Recent Bets Table */}
       <div>
         <h2 className="font-heading text-xl text-[var(--text-primary)] mb-3">
@@ -368,6 +599,37 @@ export default async function AdminDashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  sub,
+  color = "var(--text-primary)",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  color?: string;
+}) {
+  return (
+    <Card
+      className="border-[var(--border-default)] overflow-hidden"
+      style={{ background: "var(--bg-card)" }}
+    >
+      <CardContent className="py-3 px-3">
+        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">
+          {label}
+        </p>
+        <p className="text-lg font-bold" style={{ color }}>
+          {value}
+        </p>
+        {sub && (
+          <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{sub}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
