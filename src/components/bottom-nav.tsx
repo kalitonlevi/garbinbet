@@ -16,22 +16,21 @@ type NavItem = {
   href: string;
   label: string;
   icon: typeof Swords;
-  requiresBalance?: boolean;
 };
 
 const navItems: NavItem[] = [
   { href: "/fights", label: "Lutas", icon: Swords },
   { href: "/brackets", label: "Chaves", icon: GitBranch },
   { href: "/fighters", label: "Atletas", icon: Users },
-  { href: "/mines", label: "Mines", icon: Bomb, requiresBalance: true },
+  { href: "/mines", label: "Mines", icon: Bomb },
   { href: "/my-bets", label: "Apostas", icon: Ticket },
   { href: "/wallet", label: "Carteira", icon: Wallet },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 
-export function BottomNav({ hasBalance = false }: { hasBalance?: boolean }) {
+export function BottomNav() {
   const pathname = usePathname();
-  const visibleItems = navItems.filter((item) => !item.requiresBalance || hasBalance);
+  const visibleItems = navItems;
 
   return (
     <nav
