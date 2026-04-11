@@ -4,6 +4,27 @@ import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+// Mines is admin-only. Every action re-verifies the role — the page-level
+// redirect is UX, this is the real security boundary.
+async function requireAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false as const, error: "Não autenticado", supabase, user: null };
+  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin") {
+    return { ok: false as const, error: "Acesso negado", supabase, user };
+  }
+  return { ok: true as const, supabase, user };
+}
+
 // ============================================
 // Provably fair mine position generation
 // ============================================
@@ -81,11 +102,9 @@ export async function startGame(
       return { ok: false, error: "Número de minas inválido (1 a 24)" };
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return { ok: false, error: "Não autenticado" };
+    const auth = await requireAdmin();
+    if (!auth.ok) return { ok: false, error: auth.error };
+    const { supabase, user } = auth;
 
     // Generate provably fair seeds
     const serverSeed = crypto.randomBytes(32).toString("hex");
@@ -173,7 +192,10 @@ export async function revealTile(
       return { ok: false, error: "Posição inválida" };
     }
 
-    const supabase = await createClient();
+    const auth = await requireAdmin();
+    if (!auth.ok) return { ok: false, error: auth.error };
+    const { supabase } = auth;
+
     const { data, error } = await supabase.rpc("mines_reveal_tile", {
       p_game_id: gameId,
       p_position: position,
@@ -238,7 +260,10 @@ export async function cashout(
 > {
   try {
     if (!gameId) return { ok: false, error: "Game id obrigatório" };
-    const supabase = await createClient();
+    const auth = await requireAdmin();
+    if (!auth.ok) return { ok: false, error: auth.error };
+    const { supabase } = auth;
+
     const { data, error } = await supabase.rpc("mines_cashout", {
       p_game_id: gameId,
     });
@@ -279,7 +304,9 @@ export type ActiveGame = {
 };
 
 export async function getActiveGame(): Promise<ActiveGame | null> {
-  const supabase = await createClient();
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+  const { supabase } = auth;
   const { data, error } = await supabase.rpc("mines_get_active_game");
   if (error || !data) return null;
   return {

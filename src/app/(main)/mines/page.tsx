@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { getActiveGame } from "@/app/actions/mines";
 import { MinesClient } from "./mines-client";
 
@@ -9,6 +9,14 @@ export default async function MinesPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  // Mines is admin-only — hide the route from regular users.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin") notFound();
 
   const { data: wallet } = await supabase
     .from("wallets")

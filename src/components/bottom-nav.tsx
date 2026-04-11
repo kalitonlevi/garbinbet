@@ -12,18 +12,26 @@ import {
   Bomb,
 } from "lucide-react";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof Swords;
+  adminOnly?: boolean;
+};
+
+const navItems: NavItem[] = [
   { href: "/fights", label: "Lutas", icon: Swords },
   { href: "/brackets", label: "Chaves", icon: GitBranch },
   { href: "/fighters", label: "Atletas", icon: Users },
-  { href: "/mines", label: "Mines", icon: Bomb },
+  { href: "/mines", label: "Mines", icon: Bomb, adminOnly: true },
   { href: "/my-bets", label: "Apostas", icon: Ticket },
   { href: "/wallet", label: "Carteira", icon: Wallet },
   { href: "/profile", label: "Perfil", icon: User },
 ];
 
-export function BottomNav() {
+export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
   return (
     <nav
@@ -31,7 +39,7 @@ export function BottomNav() {
       style={{ background: "var(--bg-surface)" }}
     >
       <div className="max-w-[480px] mx-auto flex justify-around py-2 px-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const active =
             pathname === item.href || pathname.startsWith(item.href + "/");
