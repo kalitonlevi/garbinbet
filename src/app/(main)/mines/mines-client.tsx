@@ -888,9 +888,9 @@ function Tile({
     content = <Gem className="h-5 w-5 text-[#7ED957]" />;
   } else if (showMine) {
     if (wasHit) {
-      classes += " bg-[#FF4757] border-[#FF4757] animate-pop overflow-hidden";
+      classes += " bg-[#FF4757] border-[#FF4757] animate-pop p-1";
     } else {
-      classes += " bg-[#FF4757]/30 border-[#FF4757]/60 overflow-hidden";
+      classes += " bg-[#FF4757]/30 border-[#FF4757]/60 p-1";
     }
     content = (
       <Image
@@ -898,7 +898,7 @@ function Tile({
         alt="DJ"
         width={56}
         height={56}
-        className="object-cover h-full w-full"
+        className="object-contain h-full w-full"
         draggable={false}
       />
     );
