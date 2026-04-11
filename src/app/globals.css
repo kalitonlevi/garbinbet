@@ -190,3 +190,32 @@
 .tap-scale:active {
   transform: scale(0.95);
 }
+
+/* Mines: shake on loss */
+@keyframes shakeMines {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+.animate-shake {
+  animation: shakeMines 0.6s ease-in-out;
+}
+
+/* Mines: pop on hit mine */
+@keyframes popMines {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); box-shadow: 0 0 20px #FF4757; }
+  100% { transform: scale(1); }
+}
+.animate-pop {
+  animation: popMines 0.4s ease-out;
+}
+
+/* Mines: soft pulse on cashout button */
+@keyframes pulseSoft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(126, 217, 87, 0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(126, 217, 87, 0); }
+}
+.animate-pulse-soft {
+  animation: pulseSoft 1.6s ease-in-out infinite;
+}
