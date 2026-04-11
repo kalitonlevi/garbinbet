@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -769,12 +770,21 @@ function GameView({
             className="rounded-xl border-2 border-[#FF4757] p-4 text-center"
             style={{ background: "#16161F" }}
           >
-            <Bomb className="h-10 w-10 text-[#FF4757] mx-auto mb-2" />
+            <div className="h-20 w-20 mx-auto mb-2 rounded-full border-2 border-[#FF4757] overflow-hidden">
+              <Image
+                src="/dj.png"
+                alt="DJ"
+                width={80}
+                height={80}
+                className="object-cover h-full w-full"
+                draggable={false}
+              />
+            </div>
             <p className="font-heading text-2xl text-[#FF4757] font-bold">
               BOOM! 💥
             </p>
             <p className="text-sm text-[#9999AA] mt-1">
-              Você bateu numa mina e perdeu {brl(game.betAmount)}.
+              DJ apareceu e você perdeu {brl(game.betAmount)}.
             </p>
           </div>
           <Button
@@ -878,11 +888,20 @@ function Tile({
     content = <Gem className="h-5 w-5 text-[#7ED957]" />;
   } else if (showMine) {
     if (wasHit) {
-      classes += " bg-[#FF4757] border-[#FF4757] animate-pop";
+      classes += " bg-[#FF4757] border-[#FF4757] animate-pop overflow-hidden";
     } else {
-      classes += " bg-[#FF4757]/30 border-[#FF4757]/60";
+      classes += " bg-[#FF4757]/30 border-[#FF4757]/60 overflow-hidden";
     }
-    content = <Bomb className="h-5 w-5 text-[#FF4757]" />;
+    content = (
+      <Image
+        src="/dj.png"
+        alt="DJ"
+        width={56}
+        height={56}
+        className="object-cover h-full w-full"
+        draggable={false}
+      />
+    );
   } else if (showHidden) {
     classes += " bg-[#1C1C28] border-[#2A2A3A]";
     if (!disabled) classes += " hover:border-[#F5C542] active:scale-95";
