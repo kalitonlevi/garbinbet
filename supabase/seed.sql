@@ -1,76 +1,92 @@
 -- ============================================
--- GARBINBET - Seed Data (standalone)
--- Run AFTER 001_initial_schema.sql
+-- GARBINBET — Copa Edition — Seed
+-- Jogos REAIS do Brasil na Copa 2026 (Grupo C: Marrocos, Haiti, Escócia)
+-- Brasil sempre como mandante (fighter_a) para os mercados ficarem Brasil-cêntricos.
 -- ============================================
 
+-- Evento (Grupo C) — ao vivo
 INSERT INTO events (id, name, date, status) VALUES
-  ('e1000000-0000-4000-a000-000000000001', 'Copa Garbin de Faixa Branca I', (CURRENT_DATE + INTERVAL '14 days')::date, 'upcoming');
+  ('e1000000-0000-4000-a000-000000000001', 'Copa do Mundo 2026 — Grupo C', DATE '2026-06-13', 'live');
 
-INSERT INTO fighters (id, name, nickname, weight_kg) VALUES
-  ('f1000000-0000-4000-a000-000000000001', 'Lucas Moreira', 'Triangulo', 70.0),
-  ('f1000000-0000-4000-a000-000000000002', 'Gabriel Santos', 'Berimbolo', 68.0),
-  ('f1000000-0000-4000-a000-000000000003', 'Pedro Oliveira', 'Guilhotina', 75.0),
-  ('f1000000-0000-4000-a000-000000000004', 'Rafael Silva', 'Kimura', 73.0),
-  ('f1000000-0000-4000-a000-000000000005', 'Matheus Costa', 'Raspao', 80.0),
-  ('f1000000-0000-4000-a000-000000000006', 'Bruno Almeida', 'Passador', 82.0),
-  ('f1000000-0000-4000-a000-000000000007', 'Thiago Ferreira', 'Queda', 65.0),
-  ('f1000000-0000-4000-a000-000000000008', 'Diego Souza', 'Montada', 67.0),
-  ('f1000000-0000-4000-a000-000000000009', 'Felipe Lima', 'Guarda', 77.0),
-  ('f1000000-0000-4000-a000-000000000010', 'Andre Pereira', 'Joelhada', 78.0),
-  ('f1000000-0000-4000-a000-000000000011', 'Vinicius Ribeiro', 'Armlock', 72.0),
-  ('f1000000-0000-4000-a000-000000000012', 'Gustavo Martins', 'Ezequiel', 69.0);
+-- Seleções. photo_url = bandeira via flagcdn (gb-sct = Escócia).
+INSERT INTO fighters (id, name, nickname, fifa_code, photo_url) VALUES
+  ('f1000000-0000-4000-a000-000000000001', 'Brasil',   'Canarinho',         'BRA', 'https://flagcdn.com/w160/br.png'),
+  ('f1000000-0000-4000-a000-000000000002', 'Marrocos', 'Leões do Atlas',    'MAR', 'https://flagcdn.com/w160/ma.png'),
+  ('f1000000-0000-4000-a000-000000000003', 'Haiti',    'Les Grenadiers',    'HAI', 'https://flagcdn.com/w160/ht.png'),
+  ('f1000000-0000-4000-a000-000000000004', 'Escócia',  'Tartan Army',       'SCO', 'https://flagcdn.com/w160/gb-sct.png');
 
-INSERT INTO fights (id, event_id, fighter_a_id, fighter_b_id, fight_order, status) VALUES
-  ('aa100000-0000-4000-a000-000000000001', 'e1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000002', 1, 'upcoming'),
-  ('aa100000-0000-4000-a000-000000000002', 'e1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000003', 'f1000000-0000-4000-a000-000000000004', 2, 'upcoming'),
-  ('aa100000-0000-4000-a000-000000000003', 'e1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000005', 'f1000000-0000-4000-a000-000000000006', 3, 'upcoming'),
-  ('aa100000-0000-4000-a000-000000000004', 'e1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000007', 'f1000000-0000-4000-a000-000000000008', 4, 'upcoming'),
-  ('aa100000-0000-4000-a000-000000000005', 'e1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000009', 'f1000000-0000-4000-a000-000000000010', 5, 'upcoming'),
-  ('aa100000-0000-4000-a000-000000000006', 'e1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000011', 'f1000000-0000-4000-a000-000000000012', 6, 'upcoming');
+-- Jogos do Brasil (kickoff em horário do leste dos EUA, ET = -04 EDT)
+INSERT INTO fights (id, event_id, fighter_a_id, fighter_b_id, fight_order, kickoff_at, status) VALUES
+  ('aa100000-0000-4000-a000-000000000001', 'e1000000-0000-4000-a000-000000000001',
+     'f1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000002',
+     1, TIMESTAMPTZ '2026-06-13 18:00:00-04', 'open'),     -- Brasil x Marrocos (MetLife, NJ)
+  ('aa100000-0000-4000-a000-000000000002', 'e1000000-0000-4000-a000-000000000001',
+     'f1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000003',
+     2, TIMESTAMPTZ '2026-06-19 20:30:00-04', 'upcoming'), -- Brasil x Haiti (Lincoln Financial, Filadélfia)
+  ('aa100000-0000-4000-a000-000000000003', 'e1000000-0000-4000-a000-000000000001',
+     'f1000000-0000-4000-a000-000000000001', 'f1000000-0000-4000-a000-000000000004',
+     3, TIMESTAMPTZ '2026-06-24 18:00:00-04', 'upcoming'); -- Brasil x Escócia (Hard Rock, Miami)
 
--- Markets + Options (same as setup_completo.sql)
-INSERT INTO markets (id, fight_id, type) VALUES
-  ('bb100000-0000-4000-a001-000000000001', 'aa100000-0000-4000-a000-000000000001', 'winner'),
-  ('bb100000-0000-4000-a001-000000000002', 'aa100000-0000-4000-a000-000000000001', 'method'),
-  ('bb100000-0000-4000-a001-000000000003', 'aa100000-0000-4000-a000-000000000001', 'has_submission'),
-  ('bb100000-0000-4000-a002-000000000001', 'aa100000-0000-4000-a000-000000000002', 'winner'),
-  ('bb100000-0000-4000-a002-000000000002', 'aa100000-0000-4000-a000-000000000002', 'method'),
-  ('bb100000-0000-4000-a002-000000000003', 'aa100000-0000-4000-a000-000000000002', 'has_submission'),
-  ('bb100000-0000-4000-a003-000000000001', 'aa100000-0000-4000-a000-000000000003', 'winner'),
-  ('bb100000-0000-4000-a003-000000000002', 'aa100000-0000-4000-a000-000000000003', 'method'),
-  ('bb100000-0000-4000-a003-000000000003', 'aa100000-0000-4000-a000-000000000003', 'has_submission'),
-  ('bb100000-0000-4000-a004-000000000001', 'aa100000-0000-4000-a000-000000000004', 'winner'),
-  ('bb100000-0000-4000-a004-000000000002', 'aa100000-0000-4000-a000-000000000004', 'method'),
-  ('bb100000-0000-4000-a004-000000000003', 'aa100000-0000-4000-a000-000000000004', 'has_submission'),
-  ('bb100000-0000-4000-a005-000000000001', 'aa100000-0000-4000-a000-000000000005', 'winner'),
-  ('bb100000-0000-4000-a005-000000000002', 'aa100000-0000-4000-a000-000000000005', 'method'),
-  ('bb100000-0000-4000-a005-000000000003', 'aa100000-0000-4000-a000-000000000005', 'has_submission'),
-  ('bb100000-0000-4000-a006-000000000001', 'aa100000-0000-4000-a000-000000000006', 'winner'),
-  ('bb100000-0000-4000-a006-000000000002', 'aa100000-0000-4000-a000-000000000006', 'method'),
-  ('bb100000-0000-4000-a006-000000000003', 'aa100000-0000-4000-a000-000000000006', 'has_submission');
+-- ============================================
+-- Mercados de cada jogo (9 mercados por jogo)
+-- Jogo 1 (Marrocos): mercados 'open'. Jogos 2 e 3: 'locked' até o admin abrir.
+-- ============================================
+DO $$
+DECLARE
+  g record;
+  mid uuid;
+  st text;
+BEGIN
+  FOR g IN
+    SELECT * FROM (VALUES
+      ('aa100000-0000-4000-a000-000000000001'::uuid, 'Marrocos', 'open'),
+      ('aa100000-0000-4000-a000-000000000002'::uuid, 'Haiti',    'locked'),
+      ('aa100000-0000-4000-a000-000000000003'::uuid, 'Escócia',  'locked')
+    ) AS t(fight_id, opp, status)
+  LOOP
+    st := g.status;
 
-INSERT INTO market_options (market_id, label) VALUES
-  ('bb100000-0000-4000-a001-000000000001', 'Lucas "Triangulo" Moreira'),
-  ('bb100000-0000-4000-a001-000000000001', 'Gabriel "Berimbolo" Santos'),
-  ('bb100000-0000-4000-a001-000000000002', 'Finalizacao'), ('bb100000-0000-4000-a001-000000000002', 'Pontos/Decisao'), ('bb100000-0000-4000-a001-000000000002', 'DQ/Outro'),
-  ('bb100000-0000-4000-a001-000000000003', 'Sim'), ('bb100000-0000-4000-a001-000000000003', 'Nao'),
-  ('bb100000-0000-4000-a002-000000000001', 'Pedro "Guilhotina" Oliveira'),
-  ('bb100000-0000-4000-a002-000000000001', 'Rafael "Kimura" Silva'),
-  ('bb100000-0000-4000-a002-000000000002', 'Finalizacao'), ('bb100000-0000-4000-a002-000000000002', 'Pontos/Decisao'), ('bb100000-0000-4000-a002-000000000002', 'DQ/Outro'),
-  ('bb100000-0000-4000-a002-000000000003', 'Sim'), ('bb100000-0000-4000-a002-000000000003', 'Nao'),
-  ('bb100000-0000-4000-a003-000000000001', 'Matheus "Raspao" Costa'),
-  ('bb100000-0000-4000-a003-000000000001', 'Bruno "Passador" Almeida'),
-  ('bb100000-0000-4000-a003-000000000002', 'Finalizacao'), ('bb100000-0000-4000-a003-000000000002', 'Pontos/Decisao'), ('bb100000-0000-4000-a003-000000000002', 'DQ/Outro'),
-  ('bb100000-0000-4000-a003-000000000003', 'Sim'), ('bb100000-0000-4000-a003-000000000003', 'Nao'),
-  ('bb100000-0000-4000-a004-000000000001', 'Thiago "Queda" Ferreira'),
-  ('bb100000-0000-4000-a004-000000000001', 'Diego "Montada" Souza'),
-  ('bb100000-0000-4000-a004-000000000002', 'Finalizacao'), ('bb100000-0000-4000-a004-000000000002', 'Pontos/Decisao'), ('bb100000-0000-4000-a004-000000000002', 'DQ/Outro'),
-  ('bb100000-0000-4000-a004-000000000003', 'Sim'), ('bb100000-0000-4000-a004-000000000003', 'Nao'),
-  ('bb100000-0000-4000-a005-000000000001', 'Felipe "Guarda" Lima'),
-  ('bb100000-0000-4000-a005-000000000001', 'Andre "Joelhada" Pereira'),
-  ('bb100000-0000-4000-a005-000000000002', 'Finalizacao'), ('bb100000-0000-4000-a005-000000000002', 'Pontos/Decisao'), ('bb100000-0000-4000-a005-000000000002', 'DQ/Outro'),
-  ('bb100000-0000-4000-a005-000000000003', 'Sim'), ('bb100000-0000-4000-a005-000000000003', 'Nao'),
-  ('bb100000-0000-4000-a006-000000000001', 'Vinicius "Armlock" Ribeiro'),
-  ('bb100000-0000-4000-a006-000000000001', 'Gustavo "Ezequiel" Martins'),
-  ('bb100000-0000-4000-a006-000000000002', 'Finalizacao'), ('bb100000-0000-4000-a006-000000000002', 'Pontos/Decisao'), ('bb100000-0000-4000-a006-000000000002', 'DQ/Outro'),
-  ('bb100000-0000-4000-a006-000000000003', 'Sim'), ('bb100000-0000-4000-a006-000000000003', 'Nao');
+    -- 1) Resultado (1X2)
+    INSERT INTO markets (fight_id, type, status) VALUES (g.fight_id, 'result', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES
+      (mid, 'Vitória do Brasil'), (mid, 'Empate'), (mid, 'Vitória: ' || g.opp);
+
+    -- 2) Placar Exato
+    INSERT INTO markets (fight_id, type, status) VALUES (g.fight_id, 'exact_score', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES
+      (mid, 'Brasil 1x0'), (mid, 'Brasil 2x0'), (mid, 'Brasil 2x1'),
+      (mid, 'Brasil 3x0'), (mid, 'Empate 1x1'), (mid, g.opp || ' vence'), (mid, 'Outro placar');
+
+    -- 3) Ambas as seleções marcam?
+    INSERT INTO markets (fight_id, type, label, status) VALUES (g.fight_id, 'special', 'Ambas as seleções marcam?', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES (mid, 'Sim'), (mid, 'Não');
+
+    -- 4) Total de gols na partida
+    INSERT INTO markets (fight_id, type, label, status) VALUES (g.fight_id, 'special', 'Total de gols na partida', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES (mid, 'Mais de 2.5 gols'), (mid, 'Menos de 2.5 gols');
+
+    -- 5) Quantos gols o Brasil marca?
+    INSERT INTO markets (fight_id, type, label, status) VALUES (g.fight_id, 'special', 'Quantos gols o Brasil marca?', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES
+      (mid, 'Nenhum'), (mid, '1 gol'), (mid, '2 gols'), (mid, '3 ou mais');
+
+    -- 6) Quem marca o primeiro gol?
+    INSERT INTO markets (fight_id, type, label, status) VALUES (g.fight_id, 'special', 'Quem marca o primeiro gol?', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES
+      (mid, 'Brasil'), (mid, g.opp), (mid, 'Não sai gol');
+
+    -- 7) Resultado do 1º tempo
+    INSERT INTO markets (fight_id, type, label, status) VALUES (g.fight_id, 'special', 'Resultado do 1º tempo', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES
+      (mid, 'Brasil na frente'), (mid, 'Empate'), (mid, g.opp || ' na frente');
+
+    -- 8) Vai ter pênalti na partida?
+    INSERT INTO markets (fight_id, type, label, status) VALUES (g.fight_id, 'special', 'Vai ter pênalti na partida?', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES (mid, 'Sim'), (mid, 'Não');
+
+    -- 9) Vai ter cartão vermelho?
+    INSERT INTO markets (fight_id, type, label, status) VALUES (g.fight_id, 'special', 'Vai ter cartão vermelho?', st) RETURNING id INTO mid;
+    INSERT INTO market_options (market_id, label) VALUES (mid, 'Sim'), (mid, 'Não');
+
+  END LOOP;
+END $$;

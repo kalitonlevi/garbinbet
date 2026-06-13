@@ -61,6 +61,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center">
           <Logo size={400} showText={false} />
+          <p className="mt-2 text-sm text-[var(--text-secondary)] text-center">
+            Aposte no placar dos jogos do Brasil 🇧🇷⚽
+          </p>
         </div>
 
         <Card

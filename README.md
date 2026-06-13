@@ -1,8 +1,10 @@
-# GARBINBET
+# GARBINBET — Copa Edition
 
-Plataforma de apostas para campeonato interno de Jiu-Jitsu — exclusivo para faixas brancas.
+Plataforma de apostas no **placar dos jogos do Brasil na Copa do Mundo**.
 
-MVP para ~20-30 usuarios de uma academia, com sistema pari-mutuel de apostas, gerenciamento de eventos/lutas e carteira digital.
+Sistema pari-mutuel de apostas (mercados de Resultado 1X2 e Placar Exato), gerenciamento de jogos/seleções e carteira digital. Reaproveita o motor de apostas do MVP original.
+
+> **Rodando local:** o backend é um Supabase local via Docker (`npx supabase start`). Credenciais já em `.env.local`. Logins de teste: `admin@garbinbet.com` / `user@garbinbet.com` (senha `garbinbet123`).
 
 ## Stack
 

@@ -39,7 +39,7 @@ export function WelcomeDialog() {
           </DialogTitle>
           <DialogDescription className="text-[#9999AA] text-sm leading-relaxed space-y-3">
             <span className="block">
-              Hoje é oficialmente o <strong className="text-[#F0F0F0]">Dia da Rinha!</strong>
+              Aposte no <strong className="text-[#F0F0F0]">placar dos jogos do Brasil na Copa!</strong>
             </span>
             <span className="block">
               Divirta-se com responsabilidade. Lembre-se: existe uma taxa de <strong className="text-[#D4A017]">10%</strong> sobre as apostas para cobertura dos custos operacionais da plataforma.

@@ -3,26 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Swords,
+  Trophy,
   Ticket,
   Wallet,
   User,
   Users,
-  GitBranch,
-  Bomb,
 } from "lucide-react";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: typeof Swords;
+  icon: typeof Trophy;
 };
 
 const navItems: NavItem[] = [
-  { href: "/fights", label: "Lutas", icon: Swords },
-  { href: "/brackets", label: "Chaves", icon: GitBranch },
-  { href: "/fighters", label: "Atletas", icon: Users },
-  { href: "/mines", label: "Mines", icon: Bomb },
+  { href: "/fights", label: "Jogos", icon: Trophy },
+  { href: "/fighters", label: "Seleções", icon: Users },
   { href: "/my-bets", label: "Apostas", icon: Ticket },
   { href: "/wallet", label: "Carteira", icon: Wallet },
   { href: "/profile", label: "Perfil", icon: User },

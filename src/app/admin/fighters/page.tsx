@@ -17,14 +17,13 @@ import {
   DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Users, Plus, Loader2, Trash2, Pencil, Upload, X, User } from "lucide-react";
+import { Flag, Plus, Loader2, Trash2, Pencil, Upload } from "lucide-react";
 import type { Fighter } from "@/types/database";
 
 const fighterSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   nickname: z.string().optional(),
-  weight_kg: z.number().positive("Peso deve ser positivo").optional(),
-  gender: z.enum(["M", "F"]),
+  fifa_code: z.string().optional(),
 });
 
 export default function AdminFightersPage() {
@@ -36,8 +35,7 @@ export default function AdminFightersPage() {
 
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
-  const [weight, setWeight] = useState("");
-  const [gender, setGender] = useState<"M" | "F">("M");
+  const [fifaCode, setFifaCode] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +45,7 @@ export default function AdminFightersPage() {
   const loadFighters = useCallback(async () => {
     const { data } = await supabase
       .from("fighters")
-      .select("*")
+      .select("id, name, nickname, photo_url, fifa_code, created_at")
       .order("name");
     setFighters(data ?? []);
     setLoading(false);
@@ -61,8 +59,7 @@ export default function AdminFightersPage() {
     setEditingFighter(null);
     setName("");
     setNickname("");
-    setWeight("");
-    setGender("M");
+    setFifaCode("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -72,8 +69,7 @@ export default function AdminFightersPage() {
     setEditingFighter(f);
     setName(f.name);
     setNickname(f.nickname ?? "");
-    setWeight(f.weight_kg ? String(f.weight_kg) : "");
-    setGender(f.gender);
+    setFifaCode(f.fifa_code ?? "");
     setPhotoFile(null);
     setPhotoPreview(f.photo_url);
     setDialogOpen(true);
@@ -116,8 +112,7 @@ export default function AdminFightersPage() {
     const parsed = fighterSchema.safeParse({
       name,
       nickname: nickname || undefined,
-      weight_kg: weight ? parseFloat(weight) : undefined,
-      gender,
+      fifa_code: fifaCode || undefined,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
@@ -134,14 +129,13 @@ export default function AdminFightersPage() {
         .update({
           name: parsed.data.name,
           nickname: parsed.data.nickname || null,
-          weight_kg: parsed.data.weight_kg ?? null,
-          gender: parsed.data.gender,
+          fifa_code: parsed.data.fifa_code?.toUpperCase() || null,
           photo_url: photoUrl,
         })
         .eq("id", editingFighter.id);
       if (error) toast.error(error.message);
       else {
-        toast.success("Lutador atualizado!");
+        toast.success("Seleção atualizada!");
         setDialogOpen(false);
         loadFighters();
       }
@@ -152,8 +146,7 @@ export default function AdminFightersPage() {
         .insert({
           name: parsed.data.name,
           nickname: parsed.data.nickname || null,
-          weight_kg: parsed.data.weight_kg ?? null,
-          gender: parsed.data.gender,
+          fifa_code: parsed.data.fifa_code?.toUpperCase() || null,
         })
         .select()
         .single();
@@ -169,7 +162,7 @@ export default function AdminFightersPage() {
               .eq("id", newFighter.id);
           }
         }
-        toast.success("Lutador cadastrado!");
+        toast.success("Seleção cadastrada!");
         setDialogOpen(false);
         loadFighters();
       }
@@ -178,11 +171,11 @@ export default function AdminFightersPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Remover este lutador?")) return;
+    if (!confirm("Remover esta seleção?")) return;
     const { error } = await supabase.from("fighters").delete().eq("id", id);
     if (error) toast.error(error.message);
     else {
-      toast.success("Lutador removido");
+      toast.success("Seleção removida");
       loadFighters();
     }
   }
@@ -191,9 +184,9 @@ export default function AdminFightersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Users className="h-6 w-6 text-[var(--brand-gold)]" />
+          <Flag className="h-6 w-6 text-[var(--brand-gold)]" />
           <h1 className="font-heading text-3xl text-[var(--text-primary)]">
-            LUTADORES
+            SELEÇÕES
           </h1>
         </div>
         <Button
@@ -215,7 +208,7 @@ export default function AdminFightersPage() {
           style={{ background: "var(--bg-card)" }}
         >
           <CardContent className="py-8 text-center text-[var(--text-muted)]">
-            Nenhum lutador cadastrado.
+            Nenhuma seleção cadastrada.
           </CardContent>
         </Card>
       ) : (
@@ -226,7 +219,7 @@ export default function AdminFightersPage() {
               className="border-[var(--border-default)] overflow-hidden group"
               style={{ background: "var(--bg-card)" }}
             >
-              {/* Photo */}
+              {/* Flag */}
               <div
                 className="relative aspect-square flex items-center justify-center overflow-hidden"
                 style={{ background: "var(--bg-elevated)" }}
@@ -239,7 +232,7 @@ export default function AdminFightersPage() {
                     className="object-cover"
                   />
                 ) : (
-                  <User className="h-16 w-16 text-[var(--text-muted)]" />
+                  <Flag className="h-16 w-16 text-[var(--text-muted)]" />
                 )}
                 {/* Overlay buttons */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -269,19 +262,14 @@ export default function AdminFightersPage() {
                     &quot;{f.nickname}&quot;
                   </p>
                 )}
-                <div className="flex items-center justify-between">
+                {f.fifa_code && (
                   <Badge
                     variant="outline"
-                    className="text-[10px] border-white/20 text-white"
+                    className="text-[10px] border-[var(--brand-green)]/40 text-[var(--brand-green)]"
                   >
-                    FAIXA BRANCA
+                    {f.fifa_code}
                   </Badge>
-                  {f.weight_kg && (
-                    <span className="text-[10px] text-[var(--text-muted)]">
-                      {f.weight_kg}kg
-                    </span>
-                  )}
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -296,16 +284,16 @@ export default function AdminFightersPage() {
             style={{ background: "var(--bg-card)" }}
           >
             <DialogTitle className="font-heading text-2xl text-[var(--text-primary)] mb-4">
-              {editingFighter ? "EDITAR LUTADOR" : "NOVO LUTADOR"}
+              {editingFighter ? "EDITAR SELEÇÃO" : "NOVA SELEÇÃO"}
             </DialogTitle>
             <DialogDescription className="sr-only">
               {editingFighter
-                ? "Editar dados do lutador"
-                : "Cadastrar novo lutador"}
+                ? "Editar dados da seleção"
+                : "Cadastrar nova seleção"}
             </DialogDescription>
 
             <form onSubmit={handleSave} className="space-y-4">
-              {/* Photo upload */}
+              {/* Flag upload */}
               <div className="flex flex-col items-center gap-3">
                 <div
                   className="relative h-24 w-24 rounded-full overflow-hidden cursor-pointer border-2 border-dashed border-[var(--border-default)] flex items-center justify-center"
@@ -331,17 +319,17 @@ export default function AdminFightersPage() {
                   onChange={handleFileChange}
                 />
                 <p className="text-xs text-[var(--text-muted)]">
-                  Clique para {photoPreview ? "trocar" : "adicionar"} foto (max
-                  2MB)
+                  Clique para {photoPreview ? "trocar" : "adicionar"} bandeira
+                  (max 2MB)
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[var(--text-secondary)]">Nome *</Label>
+                <Label className="text-[var(--text-secondary)]">País *</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Nome completo"
+                  placeholder="Ex: Brasil"
                   required
                   className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
                 />
@@ -352,44 +340,22 @@ export default function AdminFightersPage() {
                 <Input
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Opcional"
+                  placeholder="Opcional (ex: Canarinho)"
                   className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[var(--text-secondary)]">
-                    Peso (kg)
-                  </Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    placeholder="75.5"
-                    className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[var(--text-secondary)]">Gênero</Label>
-                  <div className="flex gap-2">
-                    {(["M", "F"] as const).map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => setGender(g)}
-                        className={`flex-1 h-10 rounded-lg border text-sm font-bold transition-colors ${
-                          gender === g
-                            ? "bg-[var(--brand-green)] text-[var(--bg-primary)] border-[var(--brand-green)]"
-                            : "bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-secondary)]"
-                        }`}
-                      >
-                        {g === "M" ? "Masc" : "Fem"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label className="text-[var(--text-secondary)]">
+                  Código FIFA
+                </Label>
+                <Input
+                  value={fifaCode}
+                  onChange={(e) => setFifaCode(e.target.value.toUpperCase())}
+                  placeholder="Opcional (ex: BRA)"
+                  maxLength={3}
+                  className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)] uppercase"
+                />
               </div>
 
               <div className="flex gap-3 pt-2">

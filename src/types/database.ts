@@ -25,16 +25,17 @@ export type Transaction = {
   created_at: string;
 };
 
+// Reaproveitada como SELEÇÃO (Brasil, Sérvia, ...). name = país; photo_url = bandeira.
 export type Fighter = {
   id: string;
   name: string;
   nickname: string | null;
-  belt: string;
-  weight_kg: number | null;
   photo_url: string | null;
-  gender: "M" | "F";
+  fifa_code: string | null;
   created_at: string;
 };
+// Alias semântico Copa
+export type Team = Fighter;
 
 export type Event = {
   id: string;
@@ -44,6 +45,8 @@ export type Event = {
   created_at: string;
 };
 
+// Reaproveitada como JOGO (Brasil x Adversário). fighter_a = mandante; fighter_b = adversário.
+// winner_id NULL após finished => empate.
 export type Fight = {
   id: string;
   event_id: string;
@@ -51,7 +54,9 @@ export type Fight = {
   fighter_b_id: string;
   status: "upcoming" | "open" | "locked" | "finished" | "cancelled";
   winner_id: string | null;
-  result_method: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  kickoff_at: string | null;
   fight_order: number | null;
   created_at: string;
   fighter_a?: Fighter;
@@ -59,14 +64,22 @@ export type Fight = {
   markets?: Market[];
 };
 
+export type MarketType = "result" | "exact_score" | "special";
+
 export type Market = {
   id: string;
   fight_id: string;
-  type: "winner" | "method" | "has_submission" | "special";
+  type: MarketType;
   label: string | null;
   status: "open" | "locked" | "settled" | "voided";
   created_at: string;
   market_options?: MarketOption[];
+};
+
+export const MARKET_LABELS: Record<MarketType, string> = {
+  result: "Resultado",
+  exact_score: "Placar Exato",
+  special: "Especial",
 };
 
 export type MarketOption = {
@@ -91,38 +104,6 @@ export type Bet = {
   created_at: string;
   market_option?: MarketOption;
   market?: Market & { fight?: Fight };
-};
-
-export type FightScore = {
-  id: string;
-  fight_id: string;
-  fighter_id: string;
-  points: number;
-  advantages: number;
-  penalties: number;
-  updated_at: string;
-};
-
-export type FightScoreAction =
-  | "takedown"
-  | "sweep"
-  | "knee_on_belly"
-  | "guard_pass"
-  | "mount"
-  | "back_control"
-  | "advantage"
-  | "penalty";
-
-export type FightScoreEvent = {
-  id: string;
-  fight_id: string;
-  fighter_id: string;
-  action: FightScoreAction;
-  points_delta: number;
-  advantages_delta: number;
-  penalties_delta: number;
-  created_by: string | null;
-  created_at: string;
 };
 
 export type WithdrawalRequest = {

@@ -117,7 +117,7 @@ export function BetSlip({
 
       if (error) throw error;
 
-      toast.success("Aposta feita! Agora é torcer, faixa branca! 🔥");
+      toast.success("Aposta feita! Agora é torcer pelo Brasil! 🇧🇷🔥");
       setAmount("");
       onOpenChange(false);
       router.refresh();
@@ -144,7 +144,7 @@ export function BetSlip({
 
         <SheetTitle className="sr-only">Apostar</SheetTitle>
         <SheetDescription className="sr-only">
-          Fazer aposta nesta luta
+          Fazer aposta neste jogo
         </SheetDescription>
 
         <div className="space-y-4">

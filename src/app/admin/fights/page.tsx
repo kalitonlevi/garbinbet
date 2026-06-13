@@ -29,12 +29,12 @@ import type { Event, Fighter, Fight, Market, MarketOption } from "@/types/databa
 const createFightSchema = z
   .object({
     event_id: z.string().uuid("Selecione um evento"),
-    fighter_a_id: z.string().uuid("Selecione o lutador A"),
-    fighter_b_id: z.string().uuid("Selecione o lutador B"),
+    fighter_a_id: z.string().uuid("Selecione a seleção mandante"),
+    fighter_b_id: z.string().uuid("Selecione a seleção adversária"),
     fight_order: z.number().int().positive().optional(),
   })
   .refine((d) => d.fighter_a_id !== d.fighter_b_id, {
-    message: "Selecione lutadores diferentes",
+    message: "Selecione seleções diferentes",
   });
 
 function fightStatusBadge(status: string) {
@@ -157,49 +157,52 @@ export default function AdminFightsPage() {
 
     const fighterA = fighters.find((f) => f.id === fighterAId);
     const fighterB = fighters.find((f) => f.id === fighterBId);
+    const nameA = fighterA?.name ?? "Mandante";
+    const nameB = fighterB?.name ?? "Adversário";
 
-    // Auto-create 3 markets
-    const marketsToCreate = [
-      { type: "winner", fight_id: fight.id },
-      { type: "method", fight_id: fight.id },
-      { type: "has_submission", fight_id: fight.id },
+    // Cria automaticamente um leque de mercados realistas para o jogo
+    const marketDefs: {
+      type: "result" | "exact_score" | "special";
+      label: string | null;
+      options: string[];
+    }[] = [
+      { type: "result", label: null, options: [`Vitória: ${nameA}`, "Empate", `Vitória: ${nameB}`] },
+      { type: "exact_score", label: null, options: [`${nameA} 1x0`, `${nameA} 2x0`, `${nameA} 2x1`, `${nameA} 3x0`, "Empate 1x1", `${nameB} vence`, "Outro placar"] },
+      { type: "special", label: "Ambas as seleções marcam?", options: ["Sim", "Não"] },
+      { type: "special", label: "Total de gols na partida", options: ["Mais de 2.5 gols", "Menos de 2.5 gols"] },
+      { type: "special", label: `Quantos gols o ${nameA} marca?`, options: ["Nenhum", "1 gol", "2 gols", "3 ou mais"] },
+      { type: "special", label: "Quem marca o primeiro gol?", options: [nameA, nameB, "Não sai gol"] },
+      { type: "special", label: "Resultado do 1º tempo", options: [`${nameA} na frente`, "Empate", `${nameB} na frente`] },
+      { type: "special", label: "Vai ter pênalti na partida?", options: ["Sim", "Não"] },
+      { type: "special", label: "Vai ter cartão vermelho?", options: ["Sim", "Não"] },
     ];
 
     const { data: markets } = await supabase
       .from("markets")
-      .insert(marketsToCreate)
+      .insert(
+        marketDefs.map((d) => ({ fight_id: fight.id, type: d.type, label: d.label }))
+      )
       .select();
 
     if (markets) {
-      const optionsToCreate: {
-        market_id: string;
-        label: string;
-      }[] = [];
-
+      const optionsToCreate: { market_id: string; label: string }[] = [];
       for (const market of markets) {
-        if (market.type === "winner") {
-          optionsToCreate.push(
-            { market_id: market.id, label: fighterA?.name ?? "Lutador A" },
-            { market_id: market.id, label: fighterB?.name ?? "Lutador B" }
-          );
-        } else if (market.type === "method") {
-          optionsToCreate.push(
-            { market_id: market.id, label: "Finalização" },
-            { market_id: market.id, label: "Pontos/Decisão" },
-            { market_id: market.id, label: "DQ/Outro" }
-          );
-        } else if (market.type === "has_submission") {
-          optionsToCreate.push(
-            { market_id: market.id, label: "Sim" },
-            { market_id: market.id, label: "Não" }
-          );
+        // casa por tipo (result/exact_score únicos) ou por label (special)
+        const def = marketDefs.find(
+          (d) =>
+            d.type === market.type &&
+            (market.type !== "special" || d.label === market.label)
+        );
+        if (def) {
+          for (const label of def.options) {
+            optionsToCreate.push({ market_id: market.id, label });
+          }
         }
       }
-
       await supabase.from("market_options").insert(optionsToCreate);
     }
 
-    toast.success("Luta criada com 3 mercados!");
+    toast.success(`Jogo criado com ${marketDefs.length} mercados de aposta!`);
     setEventId("");
     setFighterAId("");
     setFighterBId("");
@@ -341,9 +344,8 @@ export default function AdminFightsPage() {
 
   function marketTypeLabel(market: any) {
     switch (market.type) {
-      case "winner": return "Vencedor";
-      case "method": return "Método de Vitória";
-      case "has_submission": return "Vai ter finalização?";
+      case "result": return "Resultado";
+      case "exact_score": return "Placar Exato";
       case "special": return market.label || "Mercado Especial";
       default: return market.type;
     }
@@ -358,7 +360,7 @@ export default function AdminFightsPage() {
       <div className="flex items-center gap-2">
         <Swords className="h-6 w-6 text-[var(--brand-gold)]" />
         <h1 className="font-heading text-3xl text-[var(--text-primary)]">
-          LUTAS
+          JOGOS
         </h1>
       </div>
 
@@ -394,7 +396,7 @@ export default function AdminFightsPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[var(--text-secondary)]">
-                  Ordem da luta
+                  Ordem do jogo
                 </Label>
                 <Input
                   type="number"
@@ -408,7 +410,7 @@ export default function AdminFightsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[var(--text-secondary)]">
-                  Lutador A *
+                  Seleção mandante *
                 </Label>
                 <Select
                   value={fighterAId}
@@ -425,7 +427,7 @@ export default function AdminFightsPage() {
                       <SelectItem key={f.id} value={f.id}>
                         {f.name}
                         {f.nickname ? ` "${f.nickname}"` : ""}
-                        {f.weight_kg ? ` - ${f.weight_kg}kg` : ""}
+                        {f.fifa_code ? ` (${f.fifa_code})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -433,7 +435,7 @@ export default function AdminFightsPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[var(--text-secondary)]">
-                  Lutador B *
+                  Seleção adversária *
                 </Label>
                 <Select
                   value={fighterBId}
@@ -450,7 +452,7 @@ export default function AdminFightsPage() {
                       <SelectItem key={f.id} value={f.id}>
                         {f.name}
                         {f.nickname ? ` "${f.nickname}"` : ""}
-                        {f.weight_kg ? ` - ${f.weight_kg}kg` : ""}
+                        {f.fifa_code ? ` (${f.fifa_code})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -467,7 +469,7 @@ export default function AdminFightsPage() {
               ) : (
                 <Plus className="h-4 w-4 mr-1" />
               )}
-              Criar Luta (+ 3 Mercados)
+              Criar Jogo (+ mercados)
             </Button>
           </form>
         </CardContent>
@@ -515,12 +517,12 @@ export default function AdminFightsPage() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
                       <p className="text-xs text-[var(--text-muted)]">
-                        {fight.events?.name} &bull; Luta{" "}
+                        {fight.events?.name} &bull; Jogo{" "}
                         {fight.fight_order ?? "?"}
                       </p>
                       <p className="font-semibold text-[var(--text-primary)]">
                         {fight.fighter_a?.name}{" "}
-                        <span className="text-[var(--brand-gold)]">vs</span>{" "}
+                        <span className="text-[var(--brand-gold)]">x</span>{" "}
                         {fight.fighter_b?.name}
                       </p>
                     </div>
@@ -568,7 +570,7 @@ export default function AdminFightsPage() {
                         onClick={() =>
                           openMarketsDialog(
                             fight.id,
-                            `${fight.fighter_a?.name} vs ${fight.fighter_b?.name}`
+                            `${fight.fighter_a?.name} x ${fight.fighter_b?.name}`
                           )
                         }
                         variant="outline"
@@ -607,7 +609,7 @@ export default function AdminFightsPage() {
             MERCADO ESPECIAL
           </DialogTitle>
           <DialogDescription className="text-sm text-[var(--text-muted)] mb-4">
-            Crie um mercado personalizado para esta luta
+            Crie um mercado personalizado para este jogo
           </DialogDescription>
 
           <form onSubmit={handleCreateSpecialMarket} className="space-y-4">
@@ -618,7 +620,7 @@ export default function AdminFightsPage() {
               <Input
                 value={specialLabel}
                 onChange={(e) => setSpecialLabel(e.target.value)}
-                placeholder='Ex: "Quem vai derrubar primeiro?"'
+                placeholder='Ex: "Brasil marca no 1º tempo?"'
                 required
                 className="bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
               />

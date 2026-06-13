@@ -11,7 +11,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { ArrowLeft, User, Trophy, Swords, Flame, Check, Star } from "lucide-react";
+import { ArrowLeft, Flag, Trophy, Target, Check, Star } from "lucide-react";
 import { BetSlip } from "@/components/bet-slip";
 
 type Props = {
@@ -22,12 +22,10 @@ type Props = {
 
 function marketIcon(type: string) {
   switch (type) {
-    case "winner":
+    case "result":
       return <Trophy className="h-4 w-4 text-[#D4A017]" />;
-    case "method":
-      return <Swords className="h-4 w-4 text-[#D4A017]" />;
-    case "has_submission":
-      return <Flame className="h-4 w-4 text-[#D4A017]" />;
+    case "exact_score":
+      return <Target className="h-4 w-4 text-[#D4A017]" />;
     case "special":
       return <Star className="h-4 w-4 text-purple-400" />;
     default:
@@ -37,12 +35,10 @@ function marketIcon(type: string) {
 
 function marketLabel(market: any) {
   switch (market.type) {
-    case "winner":
-      return "Vencedor";
-    case "method":
-      return "Método de Vitória";
-    case "has_submission":
-      return "Vai ter finalização?";
+    case "result":
+      return "Resultado";
+    case "exact_score":
+      return "Placar Exato";
     case "special":
       return market.label || "Mercado Especial";
     default:
@@ -62,6 +58,10 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
   const isFinished = fight.status === "finished";
   const fighterAIsWinner = isFinished && fight.winner_id === fight.fighter_a?.id;
   const fighterBIsWinner = isFinished && fight.winner_id === fight.fighter_b?.id;
+  const isDraw = isFinished && !fight.winner_id;
+  const hasScore =
+    fight.home_score !== null && fight.home_score !== undefined &&
+    fight.away_score !== null && fight.away_score !== undefined;
 
   const openMarkets = (fight.markets ?? []).filter(
     (m: any) => m.status === "open" || m.status === "locked"
@@ -84,8 +84,8 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
     setBetSlipOpen(true);
   }
 
-  // Default open the winner accordion
-  const defaultOpen = openMarkets.find((m: any) => m.type === "winner")?.id;
+  // Abre por padrão o mercado de Resultado
+  const defaultOpen = openMarkets.find((m: any) => m.type === "result")?.id;
 
   return (
     <>
@@ -105,17 +105,17 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
           </p>
         )}
 
-        {/* Fighter matchup */}
+        {/* Confronto (seleções) */}
         <div className="flex items-start justify-between py-2">
-          {/* Fighter A */}
+          {/* Seleção A (mandante) */}
           <div
             className={`flex-1 text-center space-y-2 ${
-              isFinished && !fighterAIsWinner ? "opacity-40" : ""
+              isFinished && !fighterAIsWinner && !isDraw ? "opacity-40" : ""
             }`}
           >
             <div
-              className={`h-16 w-16 mx-auto rounded-full overflow-hidden border-2 ${
-                fighterAIsWinner ? "border-[#7ED957]" : "border-[#D4A017]"
+              className={`h-16 w-24 mx-auto rounded-md overflow-hidden border-2 ${
+                fighterAIsWinner ? "border-[#7ED957]" : "border-[#2A2A3A]"
               } flex items-center justify-center`}
               style={{ background: "#1C1C28" }}
             >
@@ -123,52 +123,60 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
                 <Image
                   src={fight.fighter_a.photo_url}
                   alt={fight.fighter_a.name}
-                  width={64}
+                  width={96}
                   height={64}
                   className="object-cover w-full h-full"
                 />
               ) : (
-                <User className="h-8 w-8 text-[#6B6B80]" />
+                <Flag className="h-8 w-8 text-[#6B6B80]" />
               )}
             </div>
             <div>
               <p className="text-sm font-bold text-[#F0F0F0]">
                 {fight.fighter_a?.name}
               </p>
-              {fight.fighter_a?.nickname && (
-                <p className="text-[10px] text-[#6B6B80] italic">
-                  &quot;{fight.fighter_a.nickname}&quot;
-                </p>
-              )}
-              {fight.fighter_a?.weight_kg && (
-                <p className="text-[10px] text-[#9999AA]">
-                  {fight.fighter_a.weight_kg}kg
+              {fight.fighter_a?.fifa_code && (
+                <p className="text-[10px] text-[#6B6B80] tracking-widest">
+                  {fight.fighter_a.fifa_code}
                 </p>
               )}
               {fighterAIsWinner && (
                 <Badge className="bg-[#7ED957] text-[#0A0A0F] text-[9px] mt-1">
-                  VENCEDOR
+                  VENCEU
                 </Badge>
               )}
             </div>
           </div>
 
           <div className="flex flex-col items-center justify-center px-2 pt-4">
-            <span className="text-2xl font-bold text-[#D4A017]">VS</span>
+            {isFinished && hasScore ? (
+              <span className="text-3xl font-bold text-[#F5C542]">
+                {fight.home_score}
+                <span className="text-[#6B6B80] mx-1">x</span>
+                {fight.away_score}
+              </span>
+            ) : (
+              <span className="text-2xl font-bold text-[#D4A017]">VS</span>
+            )}
             <span className="text-[9px] text-[#6B6B80]">
-              Luta #{fight.fight_order}
+              Jogo {fight.fight_order}
             </span>
+            {isDraw && (
+              <Badge className="bg-[#6B6B80] text-[#0A0A0F] text-[9px] mt-1">
+                EMPATE
+              </Badge>
+            )}
           </div>
 
-          {/* Fighter B */}
+          {/* Seleção B (adversário) */}
           <div
             className={`flex-1 text-center space-y-2 ${
-              isFinished && !fighterBIsWinner ? "opacity-40" : ""
+              isFinished && !fighterBIsWinner && !isDraw ? "opacity-40" : ""
             }`}
           >
             <div
-              className={`h-16 w-16 mx-auto rounded-full overflow-hidden border-2 ${
-                fighterBIsWinner ? "border-[#7ED957]" : "border-[#D4A017]"
+              className={`h-16 w-24 mx-auto rounded-md overflow-hidden border-2 ${
+                fighterBIsWinner ? "border-[#7ED957]" : "border-[#2A2A3A]"
               } flex items-center justify-center`}
               style={{ background: "#1C1C28" }}
             >
@@ -176,59 +184,31 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
                 <Image
                   src={fight.fighter_b.photo_url}
                   alt={fight.fighter_b.name}
-                  width={64}
+                  width={96}
                   height={64}
                   className="object-cover w-full h-full"
                 />
               ) : (
-                <User className="h-8 w-8 text-[#6B6B80]" />
+                <Flag className="h-8 w-8 text-[#6B6B80]" />
               )}
             </div>
             <div>
               <p className="text-sm font-bold text-[#F0F0F0]">
                 {fight.fighter_b?.name}
               </p>
-              {fight.fighter_b?.nickname && (
-                <p className="text-[10px] text-[#6B6B80] italic">
-                  &quot;{fight.fighter_b.nickname}&quot;
-                </p>
-              )}
-              {fight.fighter_b?.weight_kg && (
-                <p className="text-[10px] text-[#9999AA]">
-                  {fight.fighter_b.weight_kg}kg
+              {fight.fighter_b?.fifa_code && (
+                <p className="text-[10px] text-[#6B6B80] tracking-widest">
+                  {fight.fighter_b.fifa_code}
                 </p>
               )}
               {fighterBIsWinner && (
                 <Badge className="bg-[#7ED957] text-[#0A0A0F] text-[9px] mt-1">
-                  VENCEDOR
+                  VENCEU
                 </Badge>
               )}
             </div>
           </div>
         </div>
-
-        {/* Result badge */}
-        {isFinished && fight.result_method && (
-          <div
-            className="text-center py-2.5 rounded-lg border border-[#2A2A3A]"
-            style={{ background: "#1C1C28" }}
-          >
-            <p className="text-xs text-[#D4A017] font-bold uppercase">
-              Resultado:{" "}
-              {fight.result_method === "submission"
-                ? "Finalização"
-                : fight.result_method === "points"
-                ? "Pontos"
-                : fight.result_method === "dq"
-                ? "Desqualificação"
-                : fight.result_method === "draw"
-                ? "Empate"
-                : fight.result_method === "wo"
-                ? "W.O."
-                : fight.result_method}
-            </p>
-          </div>
-        )}
 
         {/* Markets as Accordions */}
         {openMarkets.length > 0 ? (
@@ -359,7 +339,7 @@ export function FightDetailClient({ fight, userBets, userBalance }: Props) {
         <BetSlip
           open={betSlipOpen}
           onOpenChange={setBetSlipOpen}
-          fightLabel={`${fight.fighter_a?.name} vs ${fight.fighter_b?.name}`}
+          fightLabel={`${fight.fighter_a?.name} x ${fight.fighter_b?.name}`}
           optionLabel={selectedOption.label}
           optionId={selectedOption.id}
           marketId={selectedOption.marketId}
