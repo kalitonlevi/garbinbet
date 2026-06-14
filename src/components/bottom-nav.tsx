@@ -8,6 +8,8 @@ import {
   Wallet,
   User,
   Users,
+  Bomb,
+  Rocket,
 } from "lucide-react";
 
 type NavItem = {
@@ -18,6 +20,8 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/fights", label: "Jogos", icon: Trophy },
+  { href: "/mines", label: "Minado", icon: Bomb },
+  { href: "/crash", label: "Foguete", icon: Rocket },
   { href: "/fighters", label: "Seleções", icon: Users },
   { href: "/my-bets", label: "Apostas", icon: Ticket },
   { href: "/wallet", label: "Carteira", icon: Wallet },
