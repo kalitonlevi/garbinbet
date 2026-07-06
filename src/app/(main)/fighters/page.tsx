@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flag } from "lucide-react";
+import { Users, User } from "lucide-react";
 import Image from "next/image";
 import type { Fighter } from "@/types/database";
 
@@ -9,27 +9,58 @@ export default async function FightersPage() {
 
   const { data: fighters } = await supabase
     .from("fighters")
-    .select("id, name, nickname, photo_url, fifa_code, created_at")
+    .select("*")
     .order("name");
+
+  const male = (fighters ?? []).filter((f: Fighter) => f.gender === "M");
+  const female = (fighters ?? []).filter((f: Fighter) => f.gender === "F");
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Flag className="h-5 w-5 text-[#D4A017]" />
+        <Users className="h-5 w-5 text-[#D4A017]" />
         <h1 className="font-heading text-2xl text-[#D4A017] tracking-wide">
-          SELEÇÕES
+          LUTADORES
         </h1>
       </div>
 
       {!fighters || fighters.length === 0 ? (
         <Card className="border-[#2A2A3A]" style={{ background: "#16161F" }}>
           <CardContent className="py-8 text-center text-[#6B6B80]">
-            Nenhuma seleção cadastrada ainda.
+            Nenhum lutador cadastrado ainda.
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <FighterSection title="MASCULINO" fighters={male} />
+          <FighterSection title="FEMININO" fighters={female} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function FighterSection({
+  title,
+  fighters,
+}: {
+  title: string;
+  fighters: Fighter[];
+}) {
+  return (
+    <section className="space-y-3">
+      <h2 className="font-heading text-sm tracking-widest text-[#9999AA]">
+        {title}
+      </h2>
+      {fighters.length === 0 ? (
+        <Card className="border-[#2A2A3A]" style={{ background: "#16161F" }}>
+          <CardContent className="py-6 text-center text-[#6B6B80] text-sm">
+            Nenhum lutador nesta categoria.
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {(fighters as Fighter[]).map((fighter) => (
+          {fighters.map((fighter) => (
             <div
               key={fighter.id}
               className="rounded-xl border border-[#2A2A3A] overflow-hidden"
@@ -47,7 +78,7 @@ export default async function FightersPage() {
                     className="object-cover"
                   />
                 ) : (
-                  <Flag className="h-14 w-14 text-[#2A2A3A]" />
+                  <User className="h-14 w-14 text-[#2A2A3A]" />
                 )}
               </div>
               <div className="p-3 space-y-1">
@@ -59,9 +90,9 @@ export default async function FightersPage() {
                     &quot;{fighter.nickname}&quot;
                   </p>
                 )}
-                {fighter.fifa_code && (
-                  <p className="text-[10px] font-bold tracking-widest text-[#7ED957]">
-                    {fighter.fifa_code}
+                {fighter.weight_kg && (
+                  <p className="text-[10px] text-[#9999AA]">
+                    {fighter.weight_kg} kg
                   </p>
                 )}
               </div>
@@ -69,6 +100,6 @@ export default async function FightersPage() {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

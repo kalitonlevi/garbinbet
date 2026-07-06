@@ -14,8 +14,8 @@ export default async function FightDetailPage({
     .from("fights")
     .select(
       `*,
-      fighter_a:fighters!fighter_a_id(id, name, nickname, fifa_code, photo_url),
-      fighter_b:fighters!fighter_b_id(id, name, nickname, fifa_code, photo_url),
+      fighter_a:fighters!fighter_a_id(id, name, nickname, weight_kg, photo_url),
+      fighter_b:fighters!fighter_b_id(id, name, nickname, weight_kg, photo_url),
       markets(id, type, status, label, market_options(id, label, total_pool, is_winner)),
       events(name, date)`
     )

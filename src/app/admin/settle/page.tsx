@@ -7,13 +7,13 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Target,
   Loader2,
   CheckCircle,
   Ban,
-  Flag,
+  Swords,
+  User,
 } from "lucide-react";
 
 type MarketOption = {
@@ -42,12 +42,12 @@ type FightToSettle = {
 
 function marketTypeLabel(type: string) {
   switch (type) {
-    case "result":
-      return "Resultado";
-    case "exact_score":
-      return "Placar Exato";
-    case "special":
-      return "Especial";
+    case "winner":
+      return "Vencedor";
+    case "method":
+      return "Método de Vitória";
+    case "has_submission":
+      return "Vai ter finalização?";
     default:
       return type;
   }
@@ -58,17 +58,7 @@ export default function AdminSettlePage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [selections, setSelections] = useState<Record<string, string>>({});
-  const [scores, setScores] = useState<
-    Record<string, { home: string; away: string }>
-  >({});
   const supabase = createClient();
-
-  function setScore(fightId: string, side: "home" | "away", value: string) {
-    setScores((prev) => {
-      const cur = prev[fightId] ?? { home: "", away: "" };
-      return { ...prev, [fightId]: { ...cur, [side]: value } };
-    });
-  }
 
   const loadFights = useCallback(async () => {
     const { data } = await supabase
@@ -135,36 +125,20 @@ export default function AdminSettlePage() {
       }
     }
 
-    // Grava placar final + vencedor (empate => winner_id null) e finaliza o jogo
-    const score = scores[fight.id];
-    const homeScore =
-      score?.home !== undefined && score.home !== "" ? parseInt(score.home) : null;
-    const awayScore =
-      score?.away !== undefined && score.away !== "" ? parseInt(score.away) : null;
-    let winnerId: string | null = null;
-    if (homeScore !== null && awayScore !== null) {
-      if (homeScore > awayScore) winnerId = fight.fighter_a.id;
-      else if (awayScore > homeScore) winnerId = fight.fighter_b.id;
-    }
-
+    // Update fight status to finished
     await supabase
       .from("fights")
-      .update({
-        status: "finished",
-        home_score: homeScore,
-        away_score: awayScore,
-        winner_id: winnerId,
-      })
+      .update({ status: "finished" })
       .eq("id", fight.id);
 
-    toast.success("Jogo liquidado! Pagamentos realizados.");
+    toast.success("Luta liquidada! Pagamentos realizados.");
     setSelections({});
     loadFights();
     setProcessing(null);
   }
 
   async function handleCancelFight(fight: FightToSettle) {
-    if (!confirm("Cancelar este jogo e reembolsar todas as apostas?")) return;
+    if (!confirm("Cancelar esta luta e reembolsar todas as apostas?")) return;
     setProcessing(fight.id);
 
     const unsettledMarkets = fight.markets.filter(
@@ -187,7 +161,7 @@ export default function AdminSettlePage() {
       .update({ status: "cancelled" })
       .eq("id", fight.id);
 
-    toast.success("Jogo cancelado. Apostas reembolsadas.");
+    toast.success("Luta cancelada. Apostas reembolsadas.");
     loadFights();
     setProcessing(null);
   }
@@ -202,7 +176,7 @@ export default function AdminSettlePage() {
       </div>
 
       <p className="text-sm text-[var(--text-secondary)]">
-        Selecione os resultados de cada mercado e liquide o jogo para pagar os
+        Selecione os resultados de cada mercado e liquide a luta para pagar os
         vencedores.
       </p>
 
@@ -217,7 +191,7 @@ export default function AdminSettlePage() {
         >
           <CardContent className="py-12 text-center text-[var(--text-muted)]">
             <Target className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            Nenhum jogo pendente de apuração.
+            Nenhuma luta pendente de apuração.
           </CardContent>
         </Card>
       ) : (
@@ -241,7 +215,7 @@ export default function AdminSettlePage() {
                 >
                   <div>
                     <p className="text-xs text-[var(--text-muted)]">
-                      {fight.events?.name} &bull; Jogo{" "}
+                      {fight.events?.name} &bull; Luta{" "}
                       {fight.fight_order ?? "?"}
                     </p>
                   </div>
@@ -254,23 +228,23 @@ export default function AdminSettlePage() {
                 </div>
 
                 <CardContent className="py-5 space-y-5">
-                  {/* Confronto + placar final */}
-                  <div className="flex items-center justify-center gap-4">
+                  {/* Fighter matchup with photos */}
+                  <div className="flex items-center justify-center gap-6">
                     <div className="text-center space-y-2">
                       <div
-                        className="h-14 w-20 mx-auto rounded-md overflow-hidden flex items-center justify-center"
+                        className="h-16 w-16 mx-auto rounded-full overflow-hidden flex items-center justify-center"
                         style={{ background: "var(--bg-elevated)" }}
                       >
                         {fight.fighter_a?.photo_url ? (
                           <Image
                             src={fight.fighter_a.photo_url}
                             alt={fight.fighter_a.name}
-                            width={80}
-                            height={56}
+                            width={64}
+                            height={64}
                             className="object-cover w-full h-full"
                           />
                         ) : (
-                          <Flag className="h-7 w-7 text-[var(--text-muted)]" />
+                          <User className="h-8 w-8 text-[var(--text-muted)]" />
                         )}
                       </div>
                       <p className="font-semibold text-[var(--text-primary)] text-sm">
@@ -278,44 +252,23 @@ export default function AdminSettlePage() {
                       </p>
                     </div>
 
-                    {/* Placar final (opcional) */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Input
-                        type="number"
-                        min={0}
-                        inputMode="numeric"
-                        value={scores[fight.id]?.home ?? ""}
-                        onChange={(e) => setScore(fight.id, "home", e.target.value)}
-                        placeholder="-"
-                        className="w-12 h-12 text-center text-lg font-bold bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
-                      />
-                      <span className="text-[var(--brand-gold)] font-bold">x</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        inputMode="numeric"
-                        value={scores[fight.id]?.away ?? ""}
-                        onChange={(e) => setScore(fight.id, "away", e.target.value)}
-                        placeholder="-"
-                        className="w-12 h-12 text-center text-lg font-bold bg-[var(--bg-elevated)] border-[var(--border-default)] text-[var(--text-primary)]"
-                      />
-                    </div>
+                    <Swords className="h-6 w-6 text-[var(--brand-gold)] shrink-0" />
 
                     <div className="text-center space-y-2">
                       <div
-                        className="h-14 w-20 mx-auto rounded-md overflow-hidden flex items-center justify-center"
+                        className="h-16 w-16 mx-auto rounded-full overflow-hidden flex items-center justify-center"
                         style={{ background: "var(--bg-elevated)" }}
                       >
                         {fight.fighter_b?.photo_url ? (
                           <Image
                             src={fight.fighter_b.photo_url}
                             alt={fight.fighter_b.name}
-                            width={80}
-                            height={56}
+                            width={64}
+                            height={64}
                             className="object-cover w-full h-full"
                           />
                         ) : (
-                          <Flag className="h-7 w-7 text-[var(--text-muted)]" />
+                          <User className="h-8 w-8 text-[var(--text-muted)]" />
                         )}
                       </div>
                       <p className="font-semibold text-[var(--text-primary)] text-sm">
@@ -421,7 +374,7 @@ export default function AdminSettlePage() {
                       ) : (
                         <CheckCircle className="h-4 w-4 mr-1" />
                       )}
-                      Liquidar Jogo
+                      Liquidar Luta
                     </Button>
                     <Button
                       variant="outline"

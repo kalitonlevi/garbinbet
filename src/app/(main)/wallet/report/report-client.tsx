@@ -38,10 +38,12 @@ type Props = {
 
 function marketTypeLabel(type?: string) {
   switch (type) {
-    case "result":
-      return "Resultado";
-    case "exact_score":
-      return "Placar Exato";
+    case "winner":
+      return "Vencedor da luta";
+    case "method":
+      return "Método de vitória";
+    case "has_submission":
+      return "Vai ter finalização?";
     case "special":
       return "Mercado especial";
     default:

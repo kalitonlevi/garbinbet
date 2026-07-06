@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -160,7 +161,7 @@ export function MinesClient({ balance, initialGame, initialDaily }: Props) {
       return;
     }
     if (daily && daily.remaining <= 0) {
-      toast.error("Você atingiu o limite diário de ganhos no Campo Minado");
+      toast.error("Você atingiu o limite diário de ganhos no Mines");
       return;
     }
 
@@ -300,7 +301,7 @@ export function MinesClient({ balance, initialGame, initialDaily }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bomb className="h-5 w-5 text-[#F5C542]" />
-          <h1 className="font-heading text-2xl text-[#F0F0F0]">CAMPO MINADO</h1>
+          <h1 className="font-heading text-2xl text-[#F0F0F0]">MINES</h1>
         </div>
         <button
           onClick={() => setFairOpen(true)}
@@ -770,13 +771,20 @@ function GameView({
             style={{ background: "#16161F" }}
           >
             <div className="h-24 w-24 mx-auto mb-2 rounded-full border-2 border-[#FF4757] bg-[#FF4757]/15 p-2 flex items-center justify-center">
-              <span className="text-6xl leading-none">🟥</span>
+              <Image
+                src="/dj.png"
+                alt="DJ"
+                width={96}
+                height={96}
+                className="object-contain h-full w-full"
+                draggable={false}
+              />
             </div>
             <p className="font-heading text-2xl text-[#FF4757] font-bold">
               BOOM! 💥
             </p>
             <p className="text-sm text-[#9999AA] mt-1">
-              O VAR marcou cartão vermelho! Você perdeu {brl(game.betAmount)}.
+              DJ apareceu e você perdeu {brl(game.betAmount)}.
             </p>
           </div>
           <Button
@@ -885,7 +893,14 @@ function Tile({
       classes += " bg-[#FF4757]/30 border-[#FF4757]/60 p-1";
     }
     content = (
-      <span className="text-2xl leading-none">🟥</span>
+      <Image
+        src="/dj.png"
+        alt="DJ"
+        width={56}
+        height={56}
+        className="object-contain h-full w-full"
+        draggable={false}
+      />
     );
   } else if (showHidden) {
     classes += " bg-[#1C1C28] border-[#2A2A3A]";

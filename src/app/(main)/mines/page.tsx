@@ -45,7 +45,7 @@ function NoBalanceScreen() {
     <div className="space-y-5">
       <div className="flex items-center gap-2">
         <Bomb className="h-5 w-5 text-[#F5C542]" />
-        <h1 className="font-heading text-2xl text-[#F0F0F0]">CAMPO MINADO</h1>
+        <h1 className="font-heading text-2xl text-[#F0F0F0]">MINES</h1>
       </div>
 
       <div
@@ -61,7 +61,7 @@ function NoBalanceScreen() {
             SEM SALDO
           </p>
           <p className="text-sm text-[#F0F0F0] leading-relaxed">
-            Infelizmente você não pode jogar o Campo Minado agora —
+            Infelizmente você não pode acessar o Mines agora —
             <br />
             é preciso ter saldo na carteira pra apostar.
           </p>
@@ -82,13 +82,13 @@ function NoBalanceScreen() {
         style={{ background: "#16161F" }}
       >
         <p className="text-[10px] uppercase tracking-wider text-[#9999AA] font-semibold">
-          Como funciona o Campo Minado
+          Como funciona o Mines
         </p>
         <ul className="text-xs text-[#9999AA] leading-relaxed space-y-1">
-          <li>• Grid 5×5 com cartões vermelhos escondidos</li>
+          <li>• Grid 5×5 com minas escondidas escolhidas por você</li>
           <li>• Cada tile segura aumenta o multiplicador da aposta</li>
           <li>• Retire a qualquer momento ou arrisque por mais</li>
-          <li>• Achar um cartão vermelho = perde a aposta</li>
+          <li>• Bater numa mina = perde a aposta</li>
           <li>
             • Aposta de R$ 1 a R$ 10, ganho máximo R$ 100 por jogo
           </li>

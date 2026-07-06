@@ -17,7 +17,7 @@ const bebasNeue = Bebas_Neue({
 export const metadata: Metadata = {
   title: "GARBINBET",
   description:
-    "Aposte no placar dos jogos do Brasil na Copa do Mundo.",
+    "Plataforma de apostas para campeonatos internos da Garbin BJJ.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "GARBINBET",
-    description: "Aposte no placar dos jogos do Brasil na Copa do Mundo.",
+    description: "Plataforma de apostas para campeonatos internos da Garbin BJJ.",
     siteName: "GARBINBET",
     images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "GARBINBET",
-    description: "Aposte no placar dos jogos do Brasil na Copa do Mundo.",
+    description: "Plataforma de apostas para campeonatos internos da Garbin BJJ.",
     images: ["/og-image.png"],
   },
 };

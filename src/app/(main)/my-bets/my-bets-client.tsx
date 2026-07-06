@@ -12,12 +12,12 @@ type Props = {
 
 function marketTypeLabel(type: string) {
   switch (type) {
-    case "result":
-      return "Resultado";
-    case "exact_score":
-      return "Placar Exato";
-    case "special":
-      return "Especial";
+    case "winner":
+      return "Vencedor";
+    case "method":
+      return "Método";
+    case "has_submission":
+      return "Finalização";
     default:
       return type;
   }
@@ -79,11 +79,11 @@ export function MyBetsClient({ bets }: Props) {
           {tab === "active" ? (
             <>
               <p className="text-sm text-[#6B6B80]">
-                Ta com medo de apostar? 🇧🇷
+                Ta com medo de apostar, faixa branca? 🥋
               </p>
               <Link href="/fights">
                 <Button className="bg-[#7ED957] text-[#0A0A0F] font-bold mt-2">
-                  Ver Jogos
+                  Ver Lutas
                 </Button>
               </Link>
             </>

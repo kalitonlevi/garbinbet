@@ -176,7 +176,7 @@ export default function ProfilePage() {
       {/* Footer */}
       <div className="text-center pt-4 pb-2">
         <p className="text-[10px] text-[#6B6B80]">
-          GARBINBET v1.0 — Copa do Mundo 🇧🇷⚽
+          GARBINBET v1.0 — Exclusivo Faixa Branca 🥋
         </p>
       </div>
     </div>

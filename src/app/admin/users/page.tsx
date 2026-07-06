@@ -152,14 +152,45 @@ export default function AdminUsersPage() {
 
     setProcessing(true);
 
-    const { error } = await supabase.rpc("admin_adjust_balance", {
-      p_user_id: selectedUser.user_id,
-      p_amount: txAmount,
-      p_type: modalType,
+    const { data: wallet } = await supabase
+      .from("wallets")
+      .select("balance")
+      .eq("id", selectedUser.id)
+      .single();
+
+    if (!wallet) {
+      toast.error("Carteira não encontrada");
+      setProcessing(false);
+      return;
+    }
+
+    const newBalance =
+      modalType === "deposit"
+        ? Number(wallet.balance) + txAmount
+        : Number(wallet.balance) - txAmount;
+
+    const { error: walletError } = await supabase
+      .from("wallets")
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq("id", selectedUser.id);
+
+    if (walletError) {
+      toast.error(walletError.message);
+      setProcessing(false);
+      return;
+    }
+
+    const { error: txError } = await supabase.from("transactions").insert({
+      wallet_id: selectedUser.id,
+      type: modalType,
+      amount: modalType === "deposit" ? txAmount : -txAmount,
+      balance_after: newBalance,
+      description:
+        modalType === "deposit" ? "Depósito via admin" : "Saque via admin",
     });
 
-    if (error) {
-      toast.error(error.message);
+    if (txError) {
+      toast.error(txError.message);
     } else {
       toast.success(
         modalType === "deposit"

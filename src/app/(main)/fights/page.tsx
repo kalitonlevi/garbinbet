@@ -34,8 +34,8 @@ export default async function FightsPage() {
       .from("fights")
       .select(
         `*,
-        fighter_a:fighters!fighter_a_id(id, name, nickname, fifa_code, photo_url),
-        fighter_b:fighters!fighter_b_id(id, name, nickname, fifa_code, photo_url),
+        fighter_a:fighters!fighter_a_id(id, name, nickname, weight_kg, photo_url),
+        fighter_b:fighters!fighter_b_id(id, name, nickname, weight_kg, photo_url),
         markets(id, type, status, label, market_options(id, label, total_pool, is_winner))`
       )
       .eq("event_id", event.id)
@@ -93,10 +93,10 @@ export default async function FightsPage() {
         <div className="text-center space-y-3 py-12">
           <Trophy className="h-12 w-12 mx-auto text-[#D4A017] opacity-20" />
           <p className="text-sm text-[#9999AA]">
-            Nenhum jogo do Brasil no momento.
+            Nenhum evento ativo no momento.
           </p>
           <p className="text-xs text-[#6B6B80]">
-            Fique de olho no grupo do WhatsApp! 🇧🇷⚽
+            Fique de olho no grupo do WhatsApp! 🥋
           </p>
         </div>
       )}
